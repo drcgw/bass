@@ -1,0 +1,64 @@
+ECG-Python and GHRV protocol
+
+Dependencies:
+Enthought’s distribution of Python (canopy): https://store.enthought.com/
+
+Optional components (recommended for full feature set):
+pyEEG: http://pyeeg.sourceforge.net/
+gHRV: http://milegroup.github.io/ghrv/index.html
+
+Protocol
+A. Python
+1. Open ipython notebook: 
+	a. open terminal window
+	b. type “ipython notebook” -> Enter
+	c. the notebook should launch automatically in a web browser window. make sure that the window is not internet explorer (chrome is ideal). if the page doesn’t load, look for the line in the terminal window that reads: ‘The IPython Notebook is running at: http://###.#.#.#:8888/‘. You can copy and paste the address into the address bar of your web browser.
+	d. do not launch from Canopy! 
+	e. Navigate through your folder tree to where you have saved the SWAN.ipynb file. Click on it to open it.
+
+****To run code blocks: click on the block then press the play button at the top of the page OR hit Shift + Enter.****
+
+2. Click in code block [1]  Shift + Enter  
+	a. You should see “Load Successful!” outside the bottom of the code block
+
+	3. In code block [2]
+		a. Input the file path to the recording you want to analyze
+		ex. /Users/File/Location/file.txt
+		b.  Shift + Enter
+	4. In code block [3]
+		a. On path = line input where the data will be saved
+		b. folder = name of the folder where files will be saved. This has to already exist!
+		c.  Shift + Enter
+	5.  Shift + Enter through [4], [5], and [6]
+a. In code block [5] you will need to determine the savitzky_golay number that works best for your data. In this notebook it is set to 101
+	5. Peak Detect [7]
+a. You can change delta. If you make the delta larger few events will detected and visa versa.  
+b.  Shift + Enter
+	6. Burst Detect [10]
+a. You can change thresphprec (make higher if catching events that aren’t bursts) and cluserperc. 
+		b.  Shift + Enter
+	7. Save file for GHRV
+a. Before code block [14] you will  Shift + Enter and it will automatically save files to be opened into gHRV. You can choose to open the ttot (distances between each burst start time) or rr
+	10. Save all files 
+	11. Run through Poincare and Line Plots
+		a. Save files as pdf 
+B. GHRV
+	1. Open using terminal window
+		a. python/usr/share/ghrv/python ghrv.py
+	2. Under heart rate data (not new project)
+		a. Load either the ttot or rr file saved earlier
+		
+	3. Under Projects
+a. Change settings
+b.  60second window, 30 second shift 
+	4. Interpolate
+	5. Frame based evolution
+		a. check power and apEN  refresh
+		b. click save button  save as PDF
+c. From Frame Based Evolution Screen Export as text (must add GHRV or other identifier to file name to avoid duplicate files)
+			a. Select all bands
+b. Separation character   tab or ,
+		d. Close frame based evolution
+	6. Generate full report (click report)   save as Html ( add fullreport to the file name)
+	DONE! 
+
