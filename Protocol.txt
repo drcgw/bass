@@ -7,58 +7,144 @@ Optional components (recommended for full feature set):
 pyEEG: http://pyeeg.sourceforge.net/
 gHRV: http://milegroup.github.io/ghrv/index.html
 
-Protocol
-A. Python
-1. Open ipython notebook: 
-	a. open terminal window
-	b. type “ipython notebook” -> Enter
-	c. the notebook should launch automatically in a web browser window. make sure that the window is not internet explorer (chrome is ideal). if the page doesn’t load, look for the line in the terminal window that reads: ‘The IPython Notebook is running at: http://###.#.#.#:8888/‘. You can copy and paste the address into the address bar of your web browser.
-	d. do not launch from Canopy! 
-	e. Navigate through your folder tree to where you have saved the SWAN.ipynb file. Click on it to open it.
+Follow the steps in order to analyze your data. Check out [Requirements](https://github.com/aedobyns/SWAN/wiki/Requirements) to make sure your system can run this notebook.
 
-****To run code blocks: click on the block then press the play button at the top of the page OR hit Shift + Enter.****
+#Open ipython notebook: 
 
-2. Click in code block [1]  Shift + Enter  
-	a. You should see “Load Successful!” outside the bottom of the code block
+1. Open a terminal window.
 
-	3. In code block [2]
-		a. Input the file path to the recording you want to analyze
-		ex. /Users/File/Location/file.txt
-		b.  Shift + Enter
-	4. In code block [3]
-		a. On path = line input where the data will be saved
-		b. folder = name of the folder where files will be saved. This has to already exist!
-		c.  Shift + Enter
-	5.  Shift + Enter through [4], [5], and [6]
-a. In code block [5] you will need to determine the savitzky_golay number that works best for your data. In this notebook it is set to 101
-	5. Peak Detect [7]
-a. You can change delta. If you make the delta larger few events will detected and visa versa.  
-b.  Shift + Enter
-	6. Burst Detect [10]
-a. You can change thresphprec (make higher if catching events that aren’t bursts) and cluserperc. 
-		b.  Shift + Enter
-	7. Save file for GHRV
-a. Before code block [14] you will  Shift + Enter and it will automatically save files to be opened into gHRV. You can choose to open the ttot (distances between each burst start time) or rr
-	10. Save all files 
-	11. Run through Poincare and Line Plots
-		a. Save files as pdf 
-B. GHRV
-	1. Open using terminal window
-		a. python/usr/share/ghrv/python ghrv.py
-	2. Under heart rate data (not new project)
-		a. Load either the ttot or rr file saved earlier
-		
-	3. Under Projects
-a. Change settings
-b.  60second window, 30 second shift 
-	4. Interpolate
-	5. Frame based evolution
-		a. check power and apEN  refresh
-		b. click save button  save as PDF
-c. From Frame Based Evolution Screen Export as text (must add GHRV or other identifier to file name to avoid duplicate files)
-			a. Select all bands
-b. Separation character   tab or ,
-		d. Close frame based evolution
-	6. Generate full report (click report)   save as Html ( add fullreport to the file name)
-	DONE! 
+2. Type `ipython notebook` then press `Enter`
 
+3. the notebook should launch automatically in a web browser window. make sure that the window is not internet explorer (chrome is ideal). if the page doesn’t load, look for the line in the terminal window that reads: `The IPython Notebook is running at: http://###.#.#.#:8888/‘`. You can copy and paste the address into the address bar of your web browser.
+
+4. do not launch from Canopy! 
+
+5. Navigate through your folder tree to where you have saved the SWAN.ipynb file. Click on it to open it.
+
+#Welcome to SWAN
+
+To run code blocks, click on the block then press the play button at the top of the page OR hit `Shift + Enter`. Blocks of code are identified here by the header above them. There are also helpful boxes that contain instructions imbedded in the notebook.
+
+
+##Initalize
+	
+1. Run this block of code. It only needs to be run once at the beginning of each session.
+
+# Begin User Input
+##Load
+
+1. Run this block of code.
+
+2. Enter the full file path for the location of the data. This should start with a `/` and end with `.txt`
+
+3. Enter the full file path for the root folder of where all of your files will be saved. This should start with a `/`, but NOT end with one.
+
+4. Enter the Sample Name. This will be used to create a new folder (if one does not exist) where all of the outputs will be saved. All output files will also contain this handle as part of their file name.
+
+5. Enter the sampling rate in seconds/frame. Ex: 4k is 0.00025, 5k is 0.0002. if your data looks misaligned later (after peak detection), this number may be incorrect.
+
+6. When the data is loaded, the notebook will print `Sample SAMPLE_NAME is ###.## seconds long`
+
+##Graph Data
+
+1. Run this block of code. This will launch a pop-up window with a plot of your raw data. You can save this plot by clicking on the save icon. You can also pan and zoom.
+
+#Transform and Shift Data
+
+##Enter your settings for data transformation
+
+1. Run this block of code. You will be prompted to Enter values for different transformation and filtering settings. Choose which of these is right for your dataset. 
+
+2. Linear Fit. Enter `True` or `False` to use this function.
+
+	a. If you data has a gradual, linear slope, use this to flatten your data. Ex) photobleaching from fluorescence microscopy.
+	
+	b. **SAMPLE PICTURE**
+
+3. Butterworth BandPass Filter. Enter values for the lowcut, highcut, and polynomial order seperated by commas. if you don't want to use this filter, enter `none`.
+
+	a. If you data has a consistent noise use this to filter your data. Ex) `30, 50, 4`.
+
+	b. **SAMPLE PICTURE**
+
+4. Absolute Value. Enter `True` or `False` to use this function. If you are using the Savitsky-Golay Filter, then you **must** use this function.
+
+5. Savitsky-Golay Filter. Enter values for the window size and polynomial order seperated by commas. If you don't want to use this filter, enter `none`. Window size must be odd. Polynomial order must be greater than 3. Absolute Value must have been `True`.
+
+	a. This filter smooths out data while still preserving events/peaks. Ex) `301, 4`.
+
+	b. **SAMPLE PICTURE**
+
+6. You can rerun this block of code as many times as you need as you adjust your settings. 
+
+##Run data transformation
+
+1. Run this block of code. This will launch a pop-up window with a plot of your transformed data. You can save this plot by clicking on the save icon. You can also pan and zoom.
+
+2. If you aren't satisfied with how your data looks, return to the Enter Settings block and change your parameters.
+
+#Event Detection
+
+##Peaks
+
+1. Run this block of code. It will prompt you to enter a `delta` value between a given range (based on your dataset). 
+
+2. This will also launch a pop-up window with a plot of your data with the peaks over-layed as green triangles. Once you close the plot, a summary table will print.
+
+3. If too many peaks are detected, rerun block with a bigger `delta`.
+
+4. If too few peaks are detected, rerun block with a smaller `delta`.
+
+5. If the green markers are not aligned with the wave, then the sample rate is probably not correct. Try reloading data with the correct sample rate. 
+
+	a. Advanced Users: in the free box at the end of the notebook, run `time[1]-time[0]` to check sampling rate. 
+
+##Bursts
+
+1. Run this block of code. It will prompt you to enter a `threshold percent` value between a given range (based on your dataset). Ex) 1.0 is 100% of baseline
+
+2. Enter the `minimum inter-event interval` in seconds. This value is the minimum distance two events can be from eachother. if two events are closer together than this limit, then they are combined into one event.
+
+3. This will automatically launch a plot of the results: burst start will be in yellow and burst end will be in magenta. the red horizontal line is the threshold set using `threshold percent`. The black horizontal line is the baseline value (See [Assumptions](https://github.com/aedobyns/SWAN/wiki/Assumptions) for more on this). Use this to adjust either setting to better detect event boundaries. You can save this plot using the save icon. Once you close the plot, a summary table will print.
+
+4. If the markers are not aligned with the wave, then the sample rate is probably not correct. Try reloading data with the correct sample rate. 
+
+	a. Advanced Users: in the free box at the end of the notebook, run `time[1]-time[0]` to check sampling rate. 
+
+##Burst Area
+
+1. Run this block of code. It will take some time, since it is performing integrations.
+
+2. Skip this step if you are in a hurry or don't need this value.
+
+#Save all files and settings
+
+##Save
+
+1. Run this block of code. This will save all Results Tables, Results Summary Tables, gHRV compatible results files, and Settings. 
+
+2. If you change settings and rerun your data, all files will be saved over EXCEPT Settings. The Settings file serves as your record of each 'run' of the data you do. it is labeled with the datetime stamp of when you saved the files.
+
+#Results Plots
+
+##Poincare plots
+
+1. Run both or either blocks of code to see the poincare plots of `Total Cycle Time` or `R-R intervals`.
+
+2. Plots can be saved using the save icon in the plot pop-up.
+
+3. SD1 and SD2 are printed in the notebook. Note: these values are not saved in any data tables.
+
+	a. Advanced Users: Any result can be run using this function. Simply call the name of the column from the `results_bursts` or `results_peaks` dataframes.
+
+##Line plots
+
+1. Run this block of code to generate a two panel graph of the raw wave and analyzed wave. the first 10 seconds are the automatic settings. You can pan and zoom as needed.
+
+2. Plots can be saved using the save icon in the plot pop-up.
+
+#Advanced User option
+
+1. This section contains beta version of function calls not yet incorporated with pretty wrappers. Use at your own risk and peril. 
+
+2. All things here require those [Optional Components](https://github.com/aedobyns/SWAN/wiki/Optional-Components)
