@@ -42,9 +42,7 @@ Blocks of code are identified here by the header above them. There are also help
 
 4. Enter the Sample Name. This will be used to create a new folder (if one does not exist) where all of the outputs will be saved. All output files will also contain this handle as part of their file name.
 
-5. Enter the sampling rate in seconds/frame. Ex: 4k is 0.00025, 5k is 0.0002. if your data looks misaligned later (after peak detection), this number may be incorrect.
-
-6. When the data is loaded, the notebook will print `Sample SAMPLE_NAME is ###.## seconds long`
+5. When the data is loaded, the notebook will print `Sample SAMPLE_NAME is ###.## seconds long`
 
 ##Graph Data
 
