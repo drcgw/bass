@@ -13,27 +13,28 @@ Follow the steps in order to analyze your data. Check out [Requirements](https:/
 
 1. Open a terminal window.
 
-2. Type `ipython notebook` then press `Enter`
+2. Type `ipython notebook` then press `Enter`.
 
-3. the notebook should launch automatically in a web browser window. make sure that the window is not internet explorer (chrome is ideal). if the page doesn’t load, look for the line in the terminal window that reads: `The IPython Notebook is running at: http://###.#.#.#:8888/‘`. You can copy and paste the address into the address bar of your web browser.
+3. The notebook should launch automatically in a web browser window. Make sure that the window is not internet explorer (chrome is ideal). If the page doesn’t load, look for the line in the terminal window that reads: `The IPython Notebook is running at: http://###.#.#.#:8888/‘`. You can copy and paste the address into the address bar of your web browser.
 
-4. do not launch from Canopy! 
+4. Do not launch from Canopy! 
 
 5. Navigate through your folder tree to where you have saved the SWAN.ipynb file. Click on it to open it.
 
 #Welcome to SWAN
 
-To run code blocks, click on the block then press the play button at the top of the page OR hit `Shift + Enter`. Blocks of code are identified here by the header above them. There are also helpful boxes that contain instructions imbedded in the notebook.
+To run code blocks, click on the block then press the play button at the top of the page OR hit `Shift + Enter`. You will not have to type directly in the code boxes. Instead, you will be prompted to type in boxes that appear after you run a block.
+Blocks of code are identified here by the header above them. There are also helpful boxes that contain instructions imbedded in the notebook.
 
 
-##Initalize
+##Initialize
 	
 1. Run this block of code. It only needs to be run once at the beginning of each session.
 
 # Begin User Input
 ##Load
 
-1. Run this block of code.
+1. Run this block of code. You will be prompted to enter the loading information.
 
 2. Enter the full file path for the location of the data. This should start with a `/` and end with `.txt`
 
@@ -41,13 +42,13 @@ To run code blocks, click on the block then press the play button at the top of 
 
 4. Enter the Sample Name. This will be used to create a new folder (if one does not exist) where all of the outputs will be saved. All output files will also contain this handle as part of their file name.
 
-5. Enter the sampling rate in seconds/frame. Ex: 4k is 0.00025, 5k is 0.0002. if your data looks misaligned later (after peak detection), this number may be incorrect.
-
-6. When the data is loaded, the notebook will print `Sample SAMPLE_NAME is ###.## seconds long`
+5. When the data is loaded, the notebook will print `Sample SAMPLE_NAME is ###.## seconds long`
 
 ##Graph Data
 
 1. Run this block of code. This will launch a pop-up window with a plot of your raw data. You can save this plot by clicking on the save icon. You can also pan and zoom.
+
+2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
 
 #Transform and Shift Data
 
@@ -59,21 +60,23 @@ To run code blocks, click on the block then press the play button at the top of 
 
 	a. If you data has a gradual, linear slope, use this to flatten your data. Ex) photobleaching from fluorescence microscopy.
 	
-	b. **SAMPLE PICTURE**
+	b. **SAMPLE PICTURE COMING SOON**
 
-3. Butterworth BandPass Filter. Enter values for the lowcut, highcut, and polynomial order seperated by commas. if you don't want to use this filter, enter `none`.
+3. Butterworth BandPass Filter. Enter values for the lowcut, highcut, and polynomial order separated by commas. if you don't want to use this filter, enter `none`.
 
 	a. If you data has a consistent noise use this to filter your data. Ex) `30, 50, 4`.
 
-	b. **SAMPLE PICTURE**
+	b. **SAMPLE PICTURE COMING SOON**
 
 4. Absolute Value. Enter `True` or `False` to use this function. If you are using the Savitsky-Golay Filter, then you **must** use this function.
 
-5. Savitsky-Golay Filter. Enter values for the window size and polynomial order seperated by commas. If you don't want to use this filter, enter `none`. Window size must be odd. Polynomial order must be greater than 3. Absolute Value must have been `True`.
+5. Savitsky-Golay Filter. Enter values for the window size and polynomial order separated by commas. If you don't want to use this filter, enter `none`. Window size must be odd. Polynomial order must be greater than 3. Absolute Value must have been `True`. The units for window size are indices, not seconds.
 
 	a. This filter smooths out data while still preserving events/peaks. Ex) `301, 4`.
 
-	b. **SAMPLE PICTURE**
+	b. If the data is too course/not smooth enough, increase the window size. If the data is too smooth or events have vanished, decrease the window size.
+
+	b. **SAMPLE PICTURE COMING SOON**
 
 6. You can rerun this block of code as many times as you need as you adjust your settings. 
 
@@ -81,7 +84,9 @@ To run code blocks, click on the block then press the play button at the top of 
 
 1. Run this block of code. This will launch a pop-up window with a plot of your transformed data. You can save this plot by clicking on the save icon. You can also pan and zoom.
 
-2. If you aren't satisfied with how your data looks, return to the Enter Settings block and change your parameters.
+2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
+
+3. If you aren't satisfied with how your data looks, return to the Enter Settings block and change your parameters.
 
 #Event Detection
 
@@ -89,7 +94,7 @@ To run code blocks, click on the block then press the play button at the top of 
 
 1. Run this block of code. It will prompt you to enter a `delta` value between a given range (based on your dataset). 
 
-2. This will also launch a pop-up window with a plot of your data with the peaks over-layed as green triangles. Once you close the plot, a summary table will print.
+2. This will also launch a pop-up window with a plot of your data with the peaks overlaid as green triangles. Once you close the plot, a summary table will print.
 
 3. If too many peaks are detected, rerun block with a bigger `delta`.
 
@@ -103,7 +108,7 @@ To run code blocks, click on the block then press the play button at the top of 
 
 1. Run this block of code. It will prompt you to enter a `threshold percent` value between a given range (based on your dataset). Ex) 1.0 is 100% of baseline
 
-2. Enter the `minimum inter-event interval` in seconds. This value is the minimum distance two events can be from eachother. if two events are closer together than this limit, then they are combined into one event.
+2. Enter the `minimum inter-event interval` in seconds. This value is the minimum distance two events can be from each other. if two events are closer together than this limit, then they are combined into one event.
 
 3. This will automatically launch a plot of the results: burst start will be in yellow and burst end will be in magenta. the red horizontal line is the threshold set using `threshold percent`. The black horizontal line is the baseline value (See [Assumptions](https://github.com/aedobyns/SWAN/wiki/Assumptions) for more on this). Use this to adjust either setting to better detect event boundaries. You can save this plot using the save icon. Once you close the plot, a summary table will print.
 
@@ -143,13 +148,74 @@ To run code blocks, click on the block then press the play button at the top of 
 
 2. Plots can be saved using the save icon in the plot pop-up.
 
+#Power Spectral Density
+
+##Settings
+
+1. Run this block of code to initialize our settings for the PSD plots and calculations. To change the values, type directly into the block. You will need to change your bands depending on the type of data you are analyzing. Note) hf can be no more than half hz.
+
+##Peaks and Bursts
+
+The two sections are identical, except for which freqency data set they are handling. Peaks uses the peaks (for heart rate, this is the R-R intervals). Bursts uses the event start time array. Do not type in any of these blocks.
+
+##Frequency Plot
+
+1. Run this block to plot the frequency of events (detected with peak detect) in events/min.
+
+2. You can save this plot by clicking on the save icon. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
+
+## PSD
+
+1. Run this block of code. It will automatically launch the plot of the FFT of this data set.
+
+2. You can save this plot by clicking on the save icon. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
+
+3. When you close the plot, a summary table of the area under the curve will print for each of the bands specified.
+
+## Save PSD results and settings
+
+1. Run this block to save the results table and the settings from the PSD section.
+
+#STOP HERE
+
+1. Congrats. You finished one data file. You have some choices now.
+
+2. Continue on to advnaced user options (if you're into that).
+
+3. Run another data file by returning to the **Begin User Input** block. You must run every block again (in order) to run a new file. 
+
+4. You can quit by saving the notebook (if you want to retain a copy of your workflow) and then closing the window. Kill the kernel in the terminal window by pressing `control c` then typing `y`.
+
+5. If you are using git to version control and track your analysis (which is **HIGHLY** recommended), commit now before you load the next data file.
+
 #Advanced User option
 
 1. This section contains beta version of function calls not yet incorporated with pretty wrappers. Use at your own risk and peril. 
 
-2. All things here require those [Optional Components](https://github.com/aedobyns/SWAN/wiki/Optional-Components)
+2. Some of these things here require those [Optional Components](https://github.com/aedobyns/SWAN/wiki/Optional-Components)
 
+## Approximate entropy
+
+1. This block require PyEEG to be in your python path. It is not distributed in Canopy. 
+
+2. Run this block of code to execute the code as i have written it. Parameters (probably) need to be changed for individual users. 
+
+3. Check out the documentation for pyeeg for more information on how to change M and R: http://pyeeg.sourceforge.net/
+
+##HistEntropy
+
+1. Run the blocks (first block for peaks, second for bursts) to generate the histogram of the interval data.
+
+2. When you close the plot, the number of bins and the entropy values are printed in the notebook. These values are not automatically saved anywhere. 
+
+##Blank Code Block
+
+1. Down here, at the bottom, is where you can explore yourself. I'm surprised you kept reading up until this point. You must be a dedicated user as well as an advanced one. 
+
+2. Type your own python right in here. Don't let anyone tell you different. feel free to exploit PyEEG functions if you have that in your path. all the data you could want is stored as conveniently named things. 
+
+3. Best of Luck!
 
 ####GHRV
 
-Tutorial Soon. 
+Tutorial Soon. This is an in-house wilson activity.
