@@ -1,10 +1,10 @@
-,Settings: 2015-01-23 19:10:41.824968
-Absolute Value,True
-Bandpass Highcut,none
-Bandpass Lowcut,none
-Bandpass Polynomial,none
-Baseline Type,rolling
-Baseline rolling,"0.03750    0.050714
+	Settings: 2015-01-23 19:10:41.824968
+Absolute Value	True
+Bandpass Highcut	none
+Bandpass Lowcut	none
+Bandpass Polynomial	none
+Baseline Type	rolling
+Baseline rolling	"0.03750    0.050714
 0.03775    0.050712
 0.03800    0.050713
 0.03825    0.050717
@@ -36,14 +36,14 @@ Baseline rolling,"0.03750    0.050714
 606.91200    0.319680
 606.91225    0.318863
 Length: 2427500, dtype: float64"
-Delta,0.3
-Inter-event interval minimum (seconds),0.1
-Linear Fit,False
-Rolling Baseline Window,300.0
-Sample Folder,test
-Sample Rate (s/frame),0.00025000000000000001
-Save Location,/Users/abigaildobyns/Desktop
-Savitsky-Golay Polynomial,4
-Savitsky-Golay Window Size,251
-Threshold,0.05
-Uploaded File Location,/Users/abigaildobyns/Desktop/rat34-ECG.txt
+Delta	0.3
+Inter-event interval minimum (seconds)	0.1
+Linear Fit	False
+Rolling Baseline Window	300
+Sample Folder	test
+Sample Rate (s/frame)	0.00025
+Save Location	/Users/abigaildobyns/Desktop
+Savitzky-Golay Polynomial	4
+Savitzky-Golay Window Size	251
+Threshold	0.05
+Uploaded File Location	/Users/abigaildobyns/Desktop/rat34-ECG.txt
