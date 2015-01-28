@@ -1,0 +1,16 @@
+,Settings: 2014-11-04 14:40:39.237216
+Absolute Value,True
+Bandpass Highcut,none
+Bandpass Lowcut,none
+Bandpass Polynomial,none
+Baseline,0.056555699394503549
+Delta,0.3
+Inter-event interval minimum (seconds),0.01
+Linear Fit,False
+Percent of Baseline Threshold,1.0
+Sample Folder,rat34
+Sample Rate (s/frame),0.00025
+Save Location,/Users/abigaildobyns/Desktop
+Savitsky-Golay Polynomial,4
+Savitsky-Golay Window Size,251
+Uploaded File Location,/Users/abigaildobyns/Desktop/rat34-ECG.txt

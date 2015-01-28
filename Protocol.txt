@@ -15,11 +15,11 @@ Follow the steps in order to analyze your data. Check out [Requirements](https:/
 
 2. Type `ipython notebook` then press `Enter`.
 
-3. The notebook should launch automatically in a web browser window. Make sure that the window is not internet explorer (chrome is ideal). If the page doesn’t load, look for the line in the terminal window that reads: `The IPython Notebook is running at: http://###.#.#.#:8888/‘`. You can copy and paste the address into the address bar of your web browser.
+3. The notebook should launch automatically in a web browser window. Make sure that the window is not internet explorer (chrome is ideal, firefox is fine). If the page doesn’t load, look for the line in the terminal window that reads: `The IPython Notebook is running at: http://###.#.#.#:8888/‘`. You can copy and paste the address into the address bar of your web browser.
 
 4. Do not launch from Canopy! 
 
-5. Navigate through your folder tree to where you have saved the SWAN.ipynb file. Click on it to open it.
+5. Navigate through your folder tree to where you have saved the `SWAN.ipynb` file. Click on it to open it.
 
 #Welcome to SWAN
 
@@ -36,7 +36,7 @@ Blocks of code are identified here by the header above them. There are also help
 
 1. Run this block of code. You will be prompted to enter the loading information.
 
-2. Enter the full file path for the location of the data. This should start with a `/` and end with `.txt`
+2. Enter the full file path for the location of the data. This should start with a `/` and end with `.txt`. This text file should be tab delimitated. 
 
 3. Enter the full file path for the root folder of where all of your files will be saved. This should start with a `/`, but NOT end with one.
 
@@ -50,9 +50,17 @@ Blocks of code are identified here by the header above them. There are also help
 
 2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
 
-#Transform and Shift Data
+#Transform Data
+
+##Load settings from a file
+
+1. Run this block of code if you want to load a previously outputted SWAN settings file. The name can be changed.
+
+2. The settings will be displayed in the table below. You do not need to use any of the `Set Settings` blocks if you do not need to change a parameter. 
 
 ##Enter your settings for data transformation
+
+0. If you loaded settings from a file, you can skip this step.
 
 1. Run this block of code. You will be prompted to Enter values for different transformation and filtering settings. Choose which of these is right for your dataset. 
 
@@ -62,13 +70,11 @@ Blocks of code are identified here by the header above them. There are also help
 	
 	b. **SAMPLE PICTURE COMING SOON**
 
-3. Butterworth BandPass Filter. Enter values for the lowcut, highcut, and polynomial order separated by commas. if you don't want to use this filter, enter `none`.
+3. Butterworth BandPass Filter. Enter values for the lowcut, highcut, and polynomial order separated by commas. if you don't want to use this filter, enter `none` or `False`.
 
 	a. If you data has a consistent noise use this to filter your data. Ex) `30, 50, 4`.
 
 	b. **SAMPLE PICTURE COMING SOON**
-
-4. Absolute Value. Enter `True` or `False` to use this function. If you are using the Savitsky-Golay Filter, then you **must** use this function.
 
 5. Savitsky-Golay Filter. Enter values for the window size and polynomial order separated by commas. If you don't want to use this filter, enter `none`. Window size must be odd. Polynomial order must be greater than 3. Absolute Value must have been `True`. The units for window size are indices, not seconds.
 
@@ -77,6 +83,8 @@ Blocks of code are identified here by the header above them. There are also help
 	b. If the data is too course/not smooth enough, increase the window size. If the data is too smooth or events have vanished, decrease the window size.
 
 	b. **SAMPLE PICTURE COMING SOON**
+
+5. Absolute Value. Enter `True` or `False` to use this function. If you are using the Savitsky-Golay Filter, then this function will automatically be set to `True`.
 
 6. You can rerun this block of code as many times as you need as you adjust your settings. 
 
@@ -88,37 +96,63 @@ Blocks of code are identified here by the header above them. There are also help
 
 3. If you aren't satisfied with how your data looks, return to the Enter Settings block and change your parameters.
 
+#Set Baseline for Thresholding
+
+##Choose either linear or rolling baseline
+
+0. If you loaded settings from a file, you can skip this step.
+
+1. Choose either `linear` or `rolling` baseline. linear assumes that the first 0.1 seconds of data are representative baseline, then uses the average of this interval to create a linear threshold for events. Rolling uses a window to to a moving average of the data.
+
+2. If rolling is selected, then specify the window size in milliseconds. the smaller the window, the more sensitive the baseline will be.
+
+##Run baseline
+
+1. Run this block of code. This will launch a pop-up window with a plot of your baseline. You can save this plot by clicking on the save icon. You can also pan and zoom.
+
+2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
+
+3. If you aren't satisfied with how your baseline, return to the Enter Settings block and change your parameters.
+
+#Display Settings
+
+0. Use this block at any time to display all of the current settings. 
+
 #Event Detection
 
 ##Peaks
 
+##Enter Delta value
+
 1. Run this block of code. It will prompt you to enter a `delta` value between a given range (based on your dataset). 
 
-2. This will also launch a pop-up window with a plot of your data with the peaks overlaid as green triangles. Once you close the plot, a summary table will print.
+##Run Event Peak Detection
+
+1. This will also launch a pop-up window with a plot of your data with the peaks overlaid as green triangles. Once you close the plot, a summary table will print.
 
 3. If too many peaks are detected, rerun block with a bigger `delta`.
 
 4. If too few peaks are detected, rerun block with a smaller `delta`.
 
-5. If the green markers are not aligned with the wave, then the sample rate is probably not correct. Try reloading data with the correct sample rate. 
-
-	a. Advanced Users: in the free box at the end of the notebook, run `time[1]-time[0]` to check sampling rate. 
-
 ##Bursts
 
-1. Run this block of code. It will prompt you to enter a `threshold percent` value between a given range (based on your dataset). Ex) 1.0 is 100% of baseline
+##Enter Threshold and Cluster time values
+
+1. Run this block of code. It will prompt you to enter a `threshold` value between a given range (based on your dataset). 
+
+      a. **Linear** This value is a proportion of the baseline number -Ex) 1.0 is 100% greater than baseline
+
+      b. **Rolling** This value is the amplitude shift up from the baseline. 
 
 2. Enter the `minimum inter-event interval` in seconds. This value is the minimum distance two events can be from each other. if two events are closer together than this limit, then they are combined into one event.
 
-3. This will automatically launch a plot of the results: burst start will be in yellow and burst end will be in magenta. the red horizontal line is the threshold set using `threshold percent`. The black horizontal line is the baseline value (See [Assumptions](https://github.com/aedobyns/SWAN/wiki/Assumptions) for more on this). Use this to adjust either setting to better detect event boundaries. You can save this plot using the save icon. Once you close the plot, a summary table will print.
+##Run Event Burst Detection
 
-4. If the markers are not aligned with the wave, then the sample rate is probably not correct. Try reloading data with the correct sample rate. 
-
-	a. Advanced Users: in the free box at the end of the notebook, run `time[1]-time[0]` to check sampling rate. 
+1. This will automatically launch a plot of the results: burst start will be in yellow and burst end will be in magenta. the red horizontal line is the threshold set using `threshold value`. The blue horizontal line is the baseline value (See [Assumptions](https://github.com/aedobyns/SWAN/wiki/Assumptions) for more on this). Use this to adjust either setting to better detect event boundaries. You can save this plot using the save icon. Once you close the plot, a summary table will print.
 
 ##Burst Area
 
-1. Run this block of code. It will take some time, since it is performing integrations.
+1. Run this block of code. It will take some time (up to several minutes), since it is performing integrations.
 
 2. Skip this step if you are in a hurry or don't need this value.
 
@@ -126,9 +160,9 @@ Blocks of code are identified here by the header above them. There are also help
 
 ##Save
 
-1. Run this block of code. This will save all Results Tables, Results Summary Tables, gHRV compatible results files, and Settings. 
+1. Run this block of code. This will save all Result Tables, Result Summary Tables, and Settings. 
 
-2. If you change settings and rerun your data, all files will be saved over EXCEPT Settings. The Settings file serves as your record of each 'run' of the data you do. it is labeled with the datetime stamp of when you saved the files.
+2. If you change settings and rerun your data, all files will be saved over EXCEPT Settings. The Settings file serves as your record of each 'run' of the data you do. It is labeled with the unique datetime stamp of when you saved the files.
 
 #Results Plots
 
@@ -140,7 +174,7 @@ Blocks of code are identified here by the header above them. There are also help
 
 3. SD1 and SD2 are printed in the notebook. Note: these values are not saved in any data tables.
 
-	a. Advanced Users: Any result can be run using this function. Simply call the name of the column from the `results_bursts` or `results_peaks` dataframes.
+	a. Advanced Users: Any result can be run using this function. Simply call the name of the column from the `Results['Peaks']` or `Results['Bursts']` dataframes.
 
 ##Line plots
 
@@ -148,23 +182,29 @@ Blocks of code are identified here by the header above them. There are also help
 
 2. Plots can be saved using the save icon in the plot pop-up.
 
-#Power Spectral Density
-
-##Settings
-
-1. Run this block of code to initialize our settings for the PSD plots and calculations. To change the values, type directly into the block. You will need to change your bands depending on the type of data you are analyzing. Note) hf can be no more than half hz.
-
-##Peaks and Bursts
-
-The two sections are identical, except for which freqency data set they are handling. Peaks uses the peaks (for heart rate, this is the R-R intervals). Bursts uses the event start time array. Do not type in any of these blocks.
-
 ##Frequency Plot
 
 1. Run this block to plot the frequency of events (detected with peak detect) in events/min.
 
 2. You can save this plot by clicking on the save icon. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
 
-## PSD
+#Power Spectral Density
+
+The two sections are identical, except for which frequency data set they are handling. Peaks uses the peaks (for heart rate, this is the R-R intervals). Bursts uses the event start time array.
+
+##Settings
+
+1. Run this block of code to initialize our settings for the PSD plots and calculations. To change the values, type directly into the block. You will need to change your bands depending on the type of data you are analyzing. Note) hf can be no more than half hz.
+
+##Peaks
+
+1. Run this block of code. It will automatically launch the plot of the FFT of this data set.
+
+2. You can save this plot by clicking on the save icon. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
+
+3. When you close the plot, a summary table of the area under the curve will print for each of the bands specified.
+
+##Bursts
 
 1. Run this block of code. It will automatically launch the plot of the FFT of this data set.
 
@@ -176,11 +216,21 @@ The two sections are identical, except for which freqency data set they are hand
 
 1. Run this block to save the results table and the settings from the PSD section.
 
+#HistEntropy
+
+1. Run the blocks (first block for peaks, second for bursts) to generate the histogram of the interval data.
+
+2. When you close the plot, the number of bins and the entropy values are printed in the notebook.
+
+## Save HistEntropy Results
+
+1. Run this block to save histogram entropy results.  
+
 #STOP HERE
 
 1. Congrats. You finished one data file. You have some choices now.
 
-2. Continue on to advnaced user options (if you're into that).
+2. Continue on to advanced user options (if you're into that).
 
 3. Run another data file by returning to the **Begin User Input** block. You must run every block again (in order) to run a new file. 
 
@@ -202,20 +252,11 @@ The two sections are identical, except for which freqency data set they are hand
 
 3. Check out the documentation for pyeeg for more information on how to change M and R: http://pyeeg.sourceforge.net/
 
-##HistEntropy
-
-1. Run the blocks (first block for peaks, second for bursts) to generate the histogram of the interval data.
-
-2. When you close the plot, the number of bins and the entropy values are printed in the notebook. These values are not automatically saved anywhere. 
 
 ##Blank Code Block
 
 1. Down here, at the bottom, is where you can explore yourself. I'm surprised you kept reading up until this point. You must be a dedicated user as well as an advanced one. 
 
-2. Type your own python right in here. Don't let anyone tell you different. feel free to exploit PyEEG functions if you have that in your path. all the data you could want is stored as conveniently named things. 
+2. Type your own python right in here. Don't let anyone tell you different. Feel free to exploit PyEEG functions if you have that in your path. All the data you could want is stored as conveniently named things. 
 
 3. Best of Luck!
-
-####GHRV
-
-Tutorial Soon. This is an in-house wilson activity.
