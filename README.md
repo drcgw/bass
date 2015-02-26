@@ -9,10 +9,9 @@ RELEASE log
 Beta 1.1: 02-27-2015
 
 Minor bug fixes:
-
--Critical error in rolling baseline calculation is now corrected.
--Added links to the wiki in the notebook.
--Added Error checking for Settings blocks.
+- Critical error in rolling baseline calculation is now corrected.
+- Added links to the wiki in the notebook.
+- Added Error checking for Settings blocks.
 
 Beta 1.0: 01-27-2015
 
