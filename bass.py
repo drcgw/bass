@@ -113,7 +113,7 @@ def load_wrapper(Data, Settings):
 
     #Plain text, no headers, col[0] is time in seconds
     elif Settings['File Type'] == 'Plain':
-        data = pd.read_csv(r'%s/%s' %(Settings['folder'],Settings['Label']), sep = '\t', 
+        data = pd.read_csv(r'%s/%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
                            index_col= 0, header=None)
         data.index.name = 'Time(s)'
 
@@ -130,7 +130,7 @@ def load_wrapper(Data, Settings):
 
 
     elif Settings['File Type'] == 'Morgan':
-        data = pd.read_csv(r'%s/%s' %(Settings['folder'],Settings['Label']), sep = ',', 
+        data = pd.read_csv(r'%s/%s' %(Settings['folder'], Settings['Label']), sep = ',', 
                            index_col= 0)
         data.index.name = 'Time(s)'
 
@@ -292,7 +292,7 @@ def load_settings(Settings):
     Settings = load_settings(Settings)
     """
 
-    settings_temp = pd.read_csv(Settings['Settings File'], index_col=0, header=0, sep='\t')
+    settings_temp = pd.read_csv(Settings['Settings File'], index_col=0, header=0, sep=',')
     exclusion_list = ['plots folder', 'folder', 
                       'Sample Rate (s/frame)', 'Output Folder', 
                       'Baseline', 'Baseline-Rolling', 'Settings File', 'Milliseconds',
@@ -1786,11 +1786,19 @@ def average_measurement_plot(event_type, meas, Results):
     else:
         raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
     
-    plt.errorbar(measurement.mean().index, measurement.mean(), measurement.std(), marker = '^')
-    plt.xlabel('Groups')
-    plt.ylabel('%s' %(meas))
-    plt.title('Average %s %s with standard deviation' %(event_type,meas))
-    plt.show()
+    try:
+        plt.errorbar(measurement.mean().index, measurement.mean(), measurement.std(), marker = '^')
+        plt.xlabel('Groups')
+        plt.ylabel('%s' %(meas))
+        plt.title('Average %s %s with standard deviation' %(event_type,meas))
+        plt.show()
+    except ValueError: #this occurs when the column names are strings that cannot be converted into floats
+        temp = np.arange(len(measurement.mean().index))
+        plt.errorbar(temp, measurement.mean(), measurement.std(), marker = '^') #use 'order' number instead
+        plt.xlabel('Groups (by order number)')
+        plt.ylabel('%s' %(meas))
+        plt.title('Average %s %s with standard deviation' %(event_type,meas))
+        plt.show()
     
 class DataCursor(object):
     """A simple data cursor widget that displays the x,y location of a
@@ -1878,7 +1886,7 @@ def raster(Results):
         except:
             legend = key
             key = n
-            plt.legend()
+            
         temp_y = []
         for n in np.arange(len(value)):
             temp_y.append(key)
@@ -1889,6 +1897,7 @@ def raster(Results):
     #plt.ylim(ymin = 2.5)
     #plt.xlim(xmin = 30000, xmax = 45000)
     plt.title('Raster plot')
+    plt.legend()
     plt.show()
     
 #
