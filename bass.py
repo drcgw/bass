@@ -1877,7 +1877,7 @@ def raster(Results):
     Notes
     -----
     Displays the raster plot of the whole time series. 
-    Not sure if it will work with keys that are strings 
+    Keys that are stings are converted into order number. 
     """
     n=0
     for key, value in Results['Peaks'].iteritems():
@@ -1897,7 +1897,7 @@ def raster(Results):
     #plt.ylim(ymin = 2.5)
     #plt.xlim(xmin = 30000, xmax = 45000)
     plt.title('Raster plot')
-    plt.legend()
+    #plt.legend()
     plt.show()
     
 #
