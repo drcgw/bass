@@ -156,11 +156,216 @@ def load_wrapper(Data, Settings):
     else:
         raise ValueError('Not an acceptable file type')
     return Data, Settings
+
+def load_interact():
+    '''
+    This is the first function in the analysis pipeline. It initalizes the empty dictionaries Data, Settings, and Results.
+    It prompts the user to enter the input file path, input file name, and output folder location. 
+    Parameters
+    ----------
+    None
+    Returns
+    -------
+    Data: dictionary
+        contains the loaded DataFrame as Data['original'].
+    Settings: dictionary
+        contains settings used to load file, and sampling rate.
+    Notes
+    -----
+    This function is not used in the Basic version of the notebook, since these things are set in the manual settings block. 
+    '''
+    
+    Data = {}
+    Settings = {}
+    Results ={}
+
+    Settings['folder']= raw_input('Full File Path to Folder containing file: ')
+    Settings['Label'] = raw_input('File Name: ')
+    Settings['Output Folder'] = raw_input('Full File Path to Output Folder: ')
+    
+    #The following settings are temporarily set perminently to this. In the future, file type will be selectable
+    Settings['Graph LCpro events'] = False
+    Settings['File Type'] = 'Plain' #'LCPro', 'ImageJ', 'SIMA', 'Plain', 'Morgan'
+    Settings['Milliseconds'] = False
+    
+    Data, Settings = load_wrapper(Data, Settings)
+    
+    return Data, Settings, Results
+
+def mkdir_p(path):
+    '''
+    This function creates a folder at the end of the specified path, unless the folder already exsists. 
+    '''
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise           
+
+def string_eval(string):
+    try:
+        num = float(string)
+        return num
+    except ValueError:
+        return string
+
+def load_settings(Settings):
+    """
+    Load a previously saved BASS.py settings file to use for your settings.
+    Parameters
+    ----------
+    Settings: dictionary
+        holds settings. this function uses the ['Settings File']. 
+    
+    Returns
+    -------
+    Settings: dictionary
+        updated Settings dictionary.
+    Notes
+    -----
+    This function calls in a csv and parses the objects inside into the settings dictionary. There are a handful of settings which do not get included because they are unique to each data file. They are in the exclusion_list: 'plots folder', 'folder', 'Sample Rate (s/frame)', 'Output Folder', 'Baseline', 'Baseline-Rolling', 'Settings File', 'Milliseconds', 'Label', 'File Type'. it is simple to add more keys to this list if as changes to the settings file are made.
+    Examples
+    --------
+    Settings['Settings File'] = '~/Users/me/Neuron Modeling/data/IP0_9/Settings.csv'
+    Settings = load_settings(Settings)
+    """
+
+    settings_temp = pd.read_csv(Settings['Settings File'], index_col=0, header=0, sep=',')
+    exclusion_list = ['plots folder', 'folder', 
+                      'Sample Rate (s/frame)', 'Output Folder', 
+                      'Baseline', 'Baseline-Rolling', 'Settings File', 'Milliseconds',
+                      'Label', 'File Type']
+    settings_temp = settings_temp.ix[:,0]
+    for key, val in settings_temp.iteritems():
+        
+        if key in exclusion_list:
+            continue
+        else:
+            #print key, val
+            Settings[key] = string_eval(val)
+            
+            if val == 'True':
+                Settings[key] = True
+            if val == 'False':
+                Settings[key] = False
+                
+    return Settings
+
+def load_settings_interact(Settings):
+    """
+    Load a previously saved BASS.py settings file to use for your settings.
+    Prompts the user for the filepath and file.
+    Parameters
+    ----------
+    Settings: dictionary
+        holds settings. 
+    
+    Returns
+    -------
+    Settings: dictionary
+        updated Settings dictionary. this function adds the ['Settings File']. 
+    Notes
+    -----
+    This function calls in a csv and parses the objects inside into the settings dictionary. 
+    There are a handful of settings which do not get included because they are unique to each data file. 
+    They are in the exclusion_list: 'plots folder', 'folder', 'Sample Rate (s/frame)', 'Output Folder', 
+    'Baseline', 'Baseline-Rolling', 'Settings File', 'Milliseconds', 'Label', 'File Type'. 
+    it is simple to add more keys to this list if as changes to the settings file are made.
+    Examples
+    --------
+    Settings = load_settings_interact(Settings)
+    """
+    
+    Settings['Settings File'] = raw_input('Full File path and file for the settings file: ')
+    Settings = load_settings(Settings)
+    return Settings
+
+def display_settings(Settings):
+    '''
+    orgqnizes the Settings File into a dataframe, so it can be printed.
+    Parameters
+    ----------
+    location : string
+        Full file path and name for the file.
+    event_type: string
+        Which type of result it is: peaks or bursts.
+    Settings: dictionary
+        dictionary named Settings.
+    Returns
+    -------
+    Settings_copy: Dataframe
+    Notes
+    -----
+    Compliles the dictionary into a neat dataframe to displays it. If the settings has bot been previously set, nothing will print, since there are no default parameters.
+    Examples
+    --------
+    Settings_display = display_settings(Settings)
+    Settings_display
+    '''
+    Settings_copy = Settings.copy()
+    
+    if 'Baseline-Rolling' in Settings_copy.keys():
+        Settings_copy['Baseline-Rolling'] = True
+    Settings_copy = DataFrame.from_dict(Settings_copy, orient='index')
+    Settings_copy.columns = ['Value']
+    Settings_copy = Settings_copy.sort()
+    return Settings_copy
+
+def load_results(location, event_type, Results):
+    """
+    Loads in a previous master results file.
+    Parameters
+    ----------
+    location : string
+        Full file path and name for the file.
+    event_type: string
+        Which type of result it is: peaks or bursts.
+    Results: dictionary
+        dictionary named Results, does not need to be empty.
+    Returns
+    -------
+    Results : dictionary
+        updated to now contain the master dataframe and the individual DataFrame dictionary.
+    Notes
+    -----
+    Handy way to load in just a previous Results file. 
+    Examples
+    --------
+    Results = {}
+    Results = load_results('/my/file/path/Peaks_Results.csv', 'Peaks', Results)
+    """
+    try:
+        temp = pd.read_csv(location, index_col = [0,1])
+        
+        temp_grouped = temp.groupby(level = 0)
+        temp_dict = {}
+        for key, df in temp_grouped:
+            df.index = df.index.droplevel(0)
+            temp_dict[str(key)] = df
+        if event_type.lower() == 'bursts':
+            Results['Bursts-Master'] = temp
+            Results['Bursts'] = temp_dict
+        if event_type.lower() == 'peaks':
+            Results['Peaks-Master'] = temp
+            Results['Peaks'] = temp_dict
+        return Results
+    except:
+        raise OSError('Could not load Results. :(')
+
 ###
 #
 #LCPro Load Block
 ###
+'''
+This block contains specialty code designed for Sean Wilson. It takes in files that LC_Pro, a module from ImageJ/Fiji that identifies objects and time series events from image stacks.
+This developer does not reccomend this module. It can work for some types of videos, but only if you tweak the parameters.
 
+Note to future techs in Sean's Lab:
+4/2015
+This developer does not reccomend, under any contitions, LC_pro. It has been proved,repeated and demonstrably, unreliable and it produces deeply skewed results. archived data using it should not be trusted or used.
+if the original videos are available, use another object detection for video software (SIMA is currently what we are testing.)
+'''
 def load_RAAIM(Data, Settings, Results):
     '''
     this function takes a path to where all of the LC_pro saved files are. There should be 3 files:
@@ -252,120 +457,7 @@ def get_events(data, roi_param):
         events_y[key].append(roi_events.iloc[i,1]) #use the name to add the event's amplitude data point to the dict
         
     return events_x, events_y #return the two dictionaries
-
-def mkdir_p(path):
-    '''
-    This function creates a folder at the end of the specified path, unless the folder already exsists. 
-    '''
-    try:
-        os.makedirs(path)
-    except OSError as exc: # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else: raise           
-
-def string_eval(string):
-    try:
-        num = float(string)
-        return num
-    except ValueError:
-        return string
-
-def load_settings(Settings):
-    """
-    Load a previously saved BASS.py settings file to use for your settings.
-    Parameters
-    ----------
-    Settings: dictionary
-        holds settings. this function uses the ['Settings File']. 
-    
-    Returns
-    -------
-    Settings: dictionary
-        updated Settings dictionary.
-    Notes
-    -----
-    This function calls in a csv and parses the objects inside into the settings dictionary. There are a handful of settings which do not get included because they are unique to each data file. They are in the exclusion_list: 'plots folder', 'folder', 'Sample Rate (s/frame)', 'Output Folder', 'Baseline', 'Baseline-Rolling', 'Settings File', 'Milliseconds', 'Label', 'File Type'. it is simple to add more keys to this list if as changes to the settings file are made.
-    Examples
-    --------
-    Settings['Settings File'] = '~/Users/me/Neuron Modeling/data/IP0_9/Settings.csv'
-    Settings = load_settings(Settings)
-    """
-
-    settings_temp = pd.read_csv(Settings['Settings File'], index_col=0, header=0, sep=',')
-    exclusion_list = ['plots folder', 'folder', 
-                      'Sample Rate (s/frame)', 'Output Folder', 
-                      'Baseline', 'Baseline-Rolling', 'Settings File', 'Milliseconds',
-                      'Label', 'File Type']
-    settings_temp = settings_temp.ix[:,0]
-    for key, val in settings_temp.iteritems():
-        
-        if key in exclusion_list:
-            continue
-        else:
-            #print key, val
-            Settings[key] = string_eval(val)
-            
-            if val == 'True':
-                Settings[key] = True
-            if val == 'False':
-                Settings[key] = False
-                
-    return Settings
-
-def display_settings(Settings):
-    '''
-    '''
-    Settings_copy = Settings.copy()
-    
-    if 'Baseline-Rolling' in Settings_copy.keys():
-        Settings_copy['Baseline-Rolling'] = True
-    Settings_copy = DataFrame.from_dict(Settings_copy, orient='index')
-    Settings_copy.columns = ['Value']
-    Settings_copy = Settings_copy.sort()
-    return Settings_copy
-
-def load_results(location, event_type, Results):
-    """
-    Loads in a previous master results file.
-    Parameters
-    ----------
-    location : string
-        Full file path and name for the file.
-    event_type: string
-        Which type of result it is: peaks or bursts.
-    Results: dictionary
-        dictionary named Results.
-    Returns
-    -------
-    Results : dictionary
-        updated to now contain the master dataframe and the individual DataFrame dictionary.
-    Notes
-    -----
-    Handy way to load in just a previous Results file. 
-    Examples
-    --------
-    Results = {}
-    Results = load_results('/my/file/path/Peaks_Results.csv', 'Peaks', Results)
-    """
-    try:
-        temp = pd.read_csv(location, index_col = [0,1])
-        
-        temp_grouped = temp.groupby(level = 0)
-        temp_dict = {}
-        for key, df in temp_grouped:
-            df.index = df.index.droplevel(0)
-            temp_dict[str(key)] = df
-        if event_type.lower() == 'bursts':
-            Results['Bursts-Master'] = temp
-            Results['Bursts'] = temp_dict
-        if event_type.lower() == 'peaks':
-            Results['Peaks-Master'] = temp
-            Results['Peaks'] = temp_dict
-        return Results
-    except:
-        raise OSError('Could not load Results. :(')
-    
+ 
 #
 #Transform
 #wrappers and functions
@@ -459,48 +551,65 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     y = lfilter(b, a, data)
     return y
 
-def user_input_trans(settings):
+def user_input_trans(Settings):
     '''
     this function allows the user to specify and save their settings for later 
-    analysis in an interactive way.
+    analysis in an interactive way using raw_input().
     The only argument passed in and out is the Settings Dictionary.
+    Parameters
+    ----------
+    Settings: dictionary
+        dictionary that contains the user's settings. requires the baseline settings be pre-specified.
+    
+    Returns
+    -------
+    Settings: dictionary
+        dictionary that contains the user's settings.
+    Notes
+    -----
+    None
+    Examples
+    --------
+    Settings = user_input_trans(Settings)
     '''
     
     #print "Enter the parameters of the functions you would like to use to transform your data. "
     #print "If you do not want to use a function, enter 'none'"
     
     if 'Linear Fit' in Settings.keys():
-        print "Previous Linear Fit setting: %s" %Settings['Linear Fit']
-    lin_param1 = linear_settings()
-    settings['Linear Fit'] = lin_param1
+        print "Previous Linear Fit R setting: %s" %Settings['Linear Fit']
+        if type(Settings['Linear Fit']) == float:
+            print "Previous Linear Fit setting: %s" %Settings['Linear Fit']
+    Settings = linear_settings(Settings)
+    
     
     if 'Bandpass Lowcut' in Settings.keys():
         print "Previous Bandpass setting: %s, %s, %s" %(Settings['Bandpass Lowcut'], 
                                                         Settings['Bandpass Highcut'], 
                                                         Settings['Bandpass Polynomial'])
     lowcut, highcut, poly_band = bandpass_settings()
-    settings['Bandpass Lowcut'] = lowcut
-    settings['Bandpass Highcut'] = highcut
-    settings['Bandpass Polynomial'] = poly_band
+    Settings['Bandpass Lowcut'] = lowcut
+    Settings['Bandpass Highcut'] = highcut
+    Settings['Bandpass Polynomial'] = poly_band
     
     if 'Savitzky-Golay Window Size' in Settings.keys():
         print "Previous Savitzky-Golay setting: %s, %s" %(Settings['Savitzky-Golay Window Size'], 
                                                         Settings['Savitzky-Golay Polynomial'])
     window_sav, poly_sav = savgolay_settings()
-    settings['Savitzky-Golay Window Size'] = window_sav
-    settings['Savitzky-Golay Polynomial'] = poly_sav
+    Settings['Savitzky-Golay Window Size'] = window_sav
+    Settings['Savitzky-Golay Polynomial'] = poly_sav
     
     if window_sav != 'none':
-        settings['Absolute Value'] = True
+        Settings['Absolute Value'] = True
     
     else:
         if 'Absolute Value' in Settings.keys():
             print "Previous Absolute Value: %s" %Settings['Absolute Value']
         abs_set = abs_settings()
-        settings['Absolute Value'] = abs_set
+        Settings['Absolute Value'] = abs_set
     
     print "Settings Saved"
-    return settings
+    return Settings
 
 def savgolay_settings():
     print "Enter the Savitzky Golay filter settings seperated by a comma. Window size must be odd."
@@ -554,16 +663,20 @@ def abs_settings():
         abs_set = False
     return abs_set
 
-def linear_settings():
+def linear_settings(Settings):
     print "Enter True or False to turn on or off the linear fit."
     lin_param = raw_input("Linear Fit (True/False): ").lower()
     
-    if lin_param == "false" or lin_param == 'none':
-        lin_param = False
+    if lin_param == "false" or lin_param == 'none' or lin_param == '':
+        Settings['Linear Fit'] = False
+        return Settings
     else:
-        lin_param = float(lin_param)
-    return lin_param
-
+        Settings['Linear Fit'] = raw_input('Linear fit R value (0-1): ')
+        Settings['Linear Fit-Rolling R'] = raw_input('Rolling Window Linear fit R value (0-1): ')
+        Settings['Linear Fit-Rolling Window'] = raw_input('Rolling Window size (int): ')
+        Settings['Relative Baseline'] = raw_input('Relative Baseline (float): ')
+        return Settings
+    
 def linear_subtraction(data, R_raw, R_roll, window, b=0):
     '''
     perfrom linear fit and then subtract that line from the input data. This will give the data a slope of 0.
@@ -619,13 +732,14 @@ def linear_subtraction(data, R_raw, R_roll, window, b=0):
     
 def transform_wrapper(Data, Settings):
     '''
-    wrapper for RAIN
+    Iterate over all columns of the original dataframe to transform it.
+    Creates a new dataframe called Data['trans']
     '''
     Data['trans'] = DataFrame(index = Data['original'].index)
     for label, column in Data['original'].iteritems():
         data_trans = transformation(column, Settings)
         Data['trans'][label] = data_trans
-    return Data
+    return Data, Settings
 
 def transformation(Data, Settings):
     
@@ -650,22 +764,22 @@ def transformation(Data, Settings):
         data_trans =savitzky_golay(data_trans, Settings['Savitzky-Golay Window Size'], 
                                    Settings['Savitzky-Golay Polynomial'])
     
-    #baseline and thresholding is moved to its own call threshold()
-    #base, data_shift =baseline(data_trans,settings['Sample Rate (s/frame)']) 
-    #settings['Baseline'] = base
-    
-    #data_trans = Series(data = data_trans, index = Data['original'].index)
-    #Data['trans'] = data_trans
-    #graph_trans(Data)
     return data_trans
 
 def graph_trans(Data):
-    figure = plt.plot(Data['trans'].index, Data['trans'], 'k')
-    plt.title('Transformed Data')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Relative Amplitude')
-    DataCursor(figure)
-    plt.show(figure)
+    '''
+    Plots the first column of data from the transformed dataframe
+    '''
+    try:
+        
+        plt.plot(Data['trans'].index, Data['trans'].ix[:,0], 'k')
+        plt.title('Transformed Data')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Relative Amplitude')
+        
+        plt.show()
+    except:
+        print "An Error occured: Could not display graph."
 
 #
 #Baseline
@@ -685,7 +799,14 @@ def user_input_base(Settings):
         return Settings
     
     elif baseline_type == 'linear':
-        print "Linear baseline is NOT recommended. Use rolling instead. Really, you'll be happier for it."
+        print "Enter the start and stop time in seconds of your representitive baseline. Defaults are (0, 1)"
+        print "WARNING: Use on aligned time series is not currently supported."
+        Settings['Baseline Start'] = float(raw_input('Start (seconds)'))
+        if Settings['Baseline Start'] == '':
+            Settings['Baseline Start'] = 0
+        Settings['Baseline Stop'] = float(raw_input('End (seconds)'))
+        if Settings['Baseline Stop'] == '':
+            Settings['Baseline Stop'] = 1
         Settings['Baseline Type'] = baseline_type
     
     elif baseline_type == 'rolling':
@@ -697,7 +818,7 @@ def user_input_base(Settings):
         Settings['Rolling Baseline Window'] = float(raw_input('Window size in seconds: '))
         window = float(Settings['Rolling Baseline Window'])
         
-        #convert window (ms) to index
+        #convert window (s) to index
         window = int((window)/Settings['Sample Rate (s/frame)'])
         
         if window < 2:
@@ -711,19 +832,58 @@ def user_input_base(Settings):
 
 def baseline_wrapper(Data, Settings, Results):
     '''
-    Wrapper that funnels dicts into the correct baseline function.
-    '''
+    Wrapper that directs the Data through the baseline functions. There are currently three: Static, Linear, and Rolling.
+
+    Static: this allows the user to define an arbitrary threshold line during burst detection. Therefore, no change is made to the transformed data in this function.
+    Linear: This uses a user defined segment of data from the transformed data as the baseline by averaging the points together. Then, the data is shifted by the baseline ammount, such that the baseline is now set at 0.
+    Rolling: this generates a rolling baseline from the transformed data. the size of the window is specified by the user. A small window will generate a very course baseline. The size of the window should be larger than the max duration of any event.
     
+    Parameters
+    ----------
+    Data: dictionary
+        should contain Data['original'] and Data['trans'].
+    Settings: dictionary
+        dictionary that contains the user's settings. requires the baseline settings be pre-specified.
+    Results: dictionary
+        an dictionary named Results.
+    
+    Returns
+    -------
+    Data: dictionary
+        If linear is used, then Data['shift'] will be added.
+    Settings: dictionary
+        dictionary that contains the user's settings.
+    Results: dictionary
+        Updated to contains the following objects:
+        Baseline: Single value of the baseline. Only supporeted for single time series. 
+        Baseline-Rolling:  DataFrame that contains the rolling baseline for each time series (supported for single and aligned.)
+    Notes
+    -----
+    Chosing the appropreate baseline is important for detecting event boundaries. For the first pass, chosing static may be the most useful to give you an idea of what will work best.
+    If you can make your data fundamentally linear (using linear fit/subtraction or another method) then either static or linear will work well for you.
+    If your data has a non-linear super structure, then rolling is what you want. Make sure you select a window big enough to not be significantly shifted up by events. 
+
+    Examples
+    --------
+    ?
+    '''
+    #check that the baseline settings are set
+    if 'Baseline Type' not in Settings.keys():
+        Settings = user_input_base(Settings) #if they are not, prompt to select them.
+
+
     if Settings['Baseline Type'] == 'static':
+        pass #no change in Data is required. gtfo
         return Data, Settings, Results
     
     elif Settings['Baseline Type'] == 'linear':
+
         Data['shift'] = DataFrame(index = Data['trans'].index)
         baseline = {}
         
-        for label, column in Data['trans'].iteritems():
-            index = 5/Settings['Sample Rate (s/frame)'] #find the index of the first 5 seconds of data
-            baserate = np.mean(column[:index]) #average all points to obtain baserate
+        for label, column in Data['trans'].iteritems(): #the problem with aligned time series is that the baserate calculation will be performed for each one, not garunteeing a good shift.
+            
+            baserate = np.mean(column[Settings['Baseline Start']:Settings['Baseline Stop']]) #average all points to obtain baserate
             baseline[label] = abs(baserate)
             datashift = []
 
@@ -738,7 +898,8 @@ def baseline_wrapper(Data, Settings, Results):
     elif Settings['Baseline Type'] == 'rolling':
         Data['rolling'] = DataFrame()
         Results['Baseline-Rolling'] = DataFrame()
-        window = int((Settings['Rolling Baseline Window']/1000.0)/Settings['Sample Rate (s/frame)'])
+        window = int((Settings['Rolling Baseline Window'])/Settings['Sample Rate (s/frame)'])
+        
         if window %2 !=0:
             window = window+1 #if window is odd, there's a problem with baseline_rolling.
         for label, column in Data['trans'].iteritems():
@@ -751,27 +912,6 @@ def baseline_wrapper(Data, Settings, Results):
         Data['rolling'].index = time_roll
         Results['Baseline-Rolling'].index = time_roll
         return Data, Settings, Results    
-
-def baseline_lin(data,rate):
-    '''
-    input data array (list) and rate value (capture rate in seconds), returns the baserate average and the shifted data array.
-    using the first 0.1 s of data, find average of all data values. this becomes the baseline. 
-    this means that the first 0.5 seconds of data MUST be clean and not include and event.
-    baseline is used later in burst measurements
-    import numpy as np
-    '''
-    
-    index = 0.1/rate #find the index of the first 0.1 seconds of data
-    baserate = np.mean(data[:index]) #average all points to obtain baserate
-    
-    datashift = []
-    
-    #may be able to use np.subtract(data,base) instead, but this seems to work correctly.
-    for x in data:
-        foo = (x-baserate)
-        datashift.append(foo)
-        
-    return abs(baserate), datashift
         
 def baseline_rolling(time, data_trans, window):
     '''
@@ -787,37 +927,57 @@ def baseline_rolling(time, data_trans, window):
     
     #sanity check
     if len(data_trans) != len(rolling_mean):
-        raise Exception("Something has gone horribly wrong. The data arrays are no longer the same size nor aligning. Restart the notebooke and try again.")
+        raise Exception("Something has gone horribly wrong. The data arrays are no longer the same size nor aligning. Restart the notebook and try again.")
     return rolling_mean, data_trans, time
 
-def graph_baseline(Data, Settings):
+def graph_baseline(Data, Settings, Results):
     '''
-    plot the results of the baseline thresholding. will handle both linear and rolling
+    Generates a plot displaying the transformed data with the baseline correction applied. 
+    Parameters
+    ----------
+    param1 : type, shape (N,) optional
+        description.
+    param2 : type, shape (N,) optional
+        description.
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    more note about usage and philosophy.
     '''
     
     if Settings['Baseline Type'] == 'linear':
-        
-        plt.plot(Data['shift'].index, Data['shift'], 'k') #in this instance, baseline = shift
-        plt.xlabel('Time (s)')
-        plt.ylabel('Amp')
-        plt.hlines(0,Data['shift'].index[0],Data['shift'].index[-1],colors='b')
-        #plt.xlim(xmin = min(time), xmax = (min(time)+10))
-        #plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
-        plt.title('Linear Baseline')
+        try:
+            plt.plot(Data['shift'].index, Data['shift'], 'k') #in this instance, baseline = shift
+            plt.xlabel('Time (s)')
+            plt.ylabel('Amp')
+            plt.hlines(0,Data['shift'].index[0],Data['shift'].index[-1],colors='b')
+            #plt.xlim(xmin = min(time), xmax = (min(time)+10))
+            #plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
+            plt.title('Linear Baseline')
 
-        plt.show()
+            plt.show()
+        except:
+            print "An Error Occured and I can't make your graph. Sorry. :("
     
     elif Settings['Baseline Type'] == 'rolling':
-        
-        plt.plot(Data['rolling'].index, Data['rolling'], 'k')
-        plt.xlabel('Time (s)')
-        plt.ylabel('Amp')
-        plt.plot(Settings['Baseline rolling'].index, Settings['Baseline rolling'], 'b') #in this instance, baseline = rolling average
-        plt.title('Rolling Baseline')
-        #plt.xlim(xmin = min(time), xmax = (min(time)+10))
-       # plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
-        
-        plt.show()
+        try:
+            plt.plot(Data['rolling'].index, Data['rolling'].ix[:,0], 'k')
+            plt.xlabel('Time (s)')
+            plt.ylabel('Amp')
+            plt.plot(Results['Baseline-Rolling'].index, Results['Baseline-Rolling'].ix[:,0], 'b') #in this instance, baseline = rolling average
+            plt.title('Rolling Baseline')
+            #plt.xlim(xmin = min(time), xmax = (min(time)+10))
+           # plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
+            
+            plt.show()
+        except:
+            print "An Error Occured and I can't make your graph. Sorry. :("
+    
+    elif Settings['Baseline Type'] == 'static':
+        graph_trans(Data)
 
 #
 #Event-Peak Detection
