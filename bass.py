@@ -193,9 +193,25 @@ def load_interact():
     return Data, Settings, Results
 
 def mkdir_p(path):
-    '''
-    This function creates a folder at the end of the specified path, unless the folder already exsists. 
-    '''
+    """"
+    This function creates a folder at of the given path, unless the folder already exsists. 
+    Parameters
+    ----------
+    path : string,
+        full file path or relative file path.
+    Returns
+    -------
+    None
+    Notes
+    -----
+    This does not check that the file path makes sense or is formatted correctly for OS.
+    Examples
+    --------
+    mkdir_p(User/me/my/path)
+    References
+    ----------
+    .. [1] http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
+    """
     try:
         os.makedirs(path)
     except OSError as exc: # Python >2.5
@@ -204,6 +220,16 @@ def mkdir_p(path):
         else: raise           
 
 def string_eval(string):
+    """
+    Converts a string to a float, if possible. Otherwise, returns a string.
+    Parameters
+    ----------
+    string : str, 
+    Returns
+    -------
+    string : str
+    num : float
+    """
     try:
         num = float(string)
         return num
@@ -357,15 +383,15 @@ def load_results(location, event_type, Results):
 #
 #LCPro Load Block
 ###
-'''
-This block contains specialty code designed for Sean Wilson. It takes in files that LC_Pro, a module from ImageJ/Fiji that identifies objects and time series events from image stacks.
-This developer does not reccomend this module. It can work for some types of videos, but only if you tweak the parameters.
+    '''
+    This block contains specialty code designed for Sean Wilson. It takes in files that LC_Pro, a module from ImageJ/Fiji that identifies objects and time series events from image stacks.
+    This developer does not reccomend this module. It can work for some types of videos, but only if you tweak the parameters.
 
-Note to future techs in Sean's Lab:
-4/2015
-This developer does not reccomend, under any contitions, LC_pro. It has been proved,repeated and demonstrably, unreliable and it produces deeply skewed results. archived data using it should not be trusted or used.
-if the original videos are available, use another object detection for video software (SIMA is currently what we are testing.)
-'''
+    Note to future techs in Sean's Lab:
+    4/2015
+    This developer does not reccomend, under any contitions, LC_pro. It has been proved,repeated and demonstrably, unreliable and it produces deeply skewed results. archived data using it should not be trusted or used.
+    if the original videos are available, use another object detection for video software (SIMA is currently what we are testing.)
+    '''
 def load_RAAIM(Data, Settings, Results):
     '''
     this function takes a path to where all of the LC_pro saved files are. There should be 3 files:
@@ -540,6 +566,30 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     return np.convolve( m[::-1], y, mode='valid')
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
+    """
+    Description
+    Parameters
+    ----------
+    param1 : type, shape (N,) optional
+        description.
+    param2 : type, shape (N,) optional
+        description.
+    Returns
+    -------
+    value : type, shape (N) optional
+        description.
+    Notes
+    -----
+    more note about usage and philosophy. 
+    Examples
+    --------
+    ?
+    References
+    ----------
+    .. [1] http://wiki.scipy.org/Cookbook/ButterworthBandpass
+    .. [2] http://stackoverflow.com/questions/12093594/how-to-implement-band-pass-butterworth-filter-with-scipy-signal-butter
+    """
+
     nyq = 0.5 * fs
     low = lowcut / nyq
     high = highcut / nyq
@@ -547,20 +597,41 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     return b, a
 
 def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    """
+    Description
+    Parameters
+    ----------
+    param1 : type, shape (N,) optional
+        description.
+    param2 : type, shape (N,) optional
+        description.
+    Returns
+    -------
+    value : type, shape (N) optional
+        description.
+    Notes
+    -----
+    more note about usage and philosophy. 
+    Examples
+    --------
+    ?
+    References
+    ----------
+    .. [1] http://wiki.scipy.org/Cookbook/ButterworthBandpass
+    .. [2] http://stackoverflow.com/questions/12093594/how-to-implement-band-pass-butterworth-filter-with-scipy-signal-butter
+    """
     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
     y = lfilter(b, a, data)
     return y
 
 def user_input_trans(Settings):
     '''
-    this function allows the user to specify and save their settings for later 
-    analysis in an interactive way using raw_input().
+    this function allows the user to specify and save their transformation settings for later analysis in an interactive way using raw_input().
     The only argument passed in and out is the Settings Dictionary.
     Parameters
     ----------
     Settings: dictionary
-        dictionary that contains the user's settings. requires the baseline settings be pre-specified.
-    
+        dictionary that contains the user's settings.    
     Returns
     -------
     Settings: dictionary
@@ -769,6 +840,17 @@ def transformation(Data, Settings):
 def graph_trans(Data):
     '''
     Plots the first column of data from the transformed dataframe
+    Parameters
+    ----------
+    Data: dictionary
+        should contain Data['trans']
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Cannot currently call just the transformed graph by Key. Only first column of data is displayed.
     '''
     try:
         
@@ -787,8 +869,31 @@ def graph_trans(Data):
 #
 def user_input_base(Settings):
     '''
+    this function allows the user to specify and save their baseline settings for later analysis in an interactive way using raw_input().
+    The only argument passed in and out is the Settings Dictionary.
+    Parameters
+    ----------
+    Settings: dictionary
+        dictionary that contains the user's settings.
     
+    Returns
+    -------
+    Settings: dictionary
+        dictionary that contains the user's settings.
+    Notes
+    -----
+    What are good values for baseline Settings? There is no one answer. Each user will need to tinker with settings. However, I can offer some discussion of each method and its parameters.
+
+    Static: Under this, no baseline correction is made no baseline generated. Later, the user will select a threshold value (an arbitrary y value) to detect burst boundaries.
+
+    Linear: Linear can be thoughts of as a two part baseline correction. First, the user selects the time segment from which the baseline is calculated. Second, the whole time series is shifted such that the baseline value is now 0. This shift is reflected in all y values down stream (such as peak amplitudes).
+
+    Rolling: 
+    Examples
+    --------
+    Settings = user_input_base(Settings)
     '''
+    
     if 'Baseline Type' in Settings.keys():
         print "Previous Baseline Type: %s" %Settings['Baseline Type']
         
@@ -935,17 +1040,19 @@ def graph_baseline(Data, Settings, Results):
     Generates a plot displaying the transformed data with the baseline correction applied. 
     Parameters
     ----------
-    param1 : type, shape (N,) optional
-        description.
-    param2 : type, shape (N,) optional
-        description.
+    Data: dictionary
+        should contain Data['trans'] (and Data['shift'], if the linear method is selected).
+    Settings: dictionary
+        dictionary that contains the user's settings.
+    Results: dictionary
+        an dictionary named Results. If rolling method is being used, the 'Baseline-Rolling' is stored here.
     Returns
     -------
     None
 
     Notes
     -----
-    more note about usage and philosophy.
+    If Static is chosen, then the trans graph will display again, since no change was made to the data for correct for baseline.
     '''
     
     if Settings['Baseline Type'] == 'linear':
@@ -1087,6 +1194,13 @@ def event_peakdet_settings(Settings):
     peak_min = float(peak_min)
     Settings['Peak Minimum'] = peak_min
     
+    if 'Peak Maximum' in Settings.keys():
+        print "Previous Peak Maximum value: %s" %Settings['Peak Maximum']
+    peak_max = raw_input("Enter Peak Maximum value between %s and %s: " %(round(peak_min,4) ,
+                                                                          round(max_data,4)))
+    peak_max = float(peak_max)
+    Settings['Peak Maximum'] = peak_max
+
     return Settings
 
 def event_peakdet(Data, Settings, Results, roi):

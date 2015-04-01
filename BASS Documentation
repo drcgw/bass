@@ -1,0 +1,51 @@
+BASS Documentation
+
+BASS is a set of tools that acts as the foundations and archetecture of a pipeline for event detection and analysis. this allows the user to 'build their own' specialized event detection package for their own data. It was also designed for integration into the Ipython notebook, as well as easy customization. This lab intends to design several specalized notebooks that will be included in the BASS release that use this tool in specific biological contexts.
+
+Further, different biological contexts require different types of analysis. BASS comes with the tools and pipeline to analyze the events from many types of common biomedical signaling. For single time series (SWAN), changes in the time and frequency domain are of particular interest. Signal Theory tools like Histogram Entropy, lag plots (Poincare plots), and Power Spectral Density are all available. For aligned series of signals (RAIN) like in objects from videos or modeling data, relational information between signals like correlations and k-means clustering are available. General descriptive statics as well as event analysis are also available, and tuneable to generate desired results.
+
+EVENT DETECTION
+BASS performs event detection in two independent ways: event peaks and boundaries (which we call bursts). Peaks are detected using local minima and maxima that are greater than set threshold (delta). Because they are local, these extrema can be detected even if the super structure is shifting. Peaks can be thought of as being defined in a 'top down' way, a maxima that has a minima on either side of it that have an amplitude difference of >= delta. 
+
+Bursts use a 'bottom up' method of detection, where a signal baseline must be predetermined. There are several functions that can assist the user in selecting or modifying the data so that an effective baseline can be generated (See Transformation and Baseline sections for more information). once a baseline is set, event boundaires are detected. If the signal crosses the threshold, it is the begining of an event. when the signal falls below the threshold, it is the end of the event.
+
+Once peaks and bursts have been detected, they can be filtred based on criteria specified by the user, such as minimum burst duration or minimum number of peaks/burst. These selection criteria as well as the independent methods of detection allow the user to specifically and mathematically define their events, resulting in more accurate and representitive data. These tuning features also allow for BASS to be used for many types of biomeical signal analysis.
+
+ARCHITECTURE
+Philosophically, the top level namespaces is filled with wrappers that only pass in and out 3 arguments: the dictionaries Data, Settings, and Results. This was done to preserve this developers sanity, but to also ensure cleanliness, consistency, and availability of all varibles to any function. It also makes it simple to import the settings of a previous analysis to mimic the workflow of that analysis. Lastly, it ensures that the namespace does not become crowded or confused with multipule files loaded in the same kernel session. In the middle are wrappers that serve as the 'gating' for the pipeline. Based on Settings that the user specifies, these wrappers direct the workflow and pass the correct arguments into the functions below. The bottom level functions are the algorithms that are used to calculate events, results measurements, and graphs. These are all built on common python modules: Scipy, Numpy, matplotlib, and pandas. Some of these functions have come from other open source places, but the individual docstrings contain these details.
+
+WORK FLOW
+Generally, the workflow will always follow these basic steps. Each part is encaptured in the higher order wrappers. It would be within the mid level wrappers that new features could be added and which functions are selected for any individual analysis.
+
+1. Data is loaded in and stored as a pandas Dataframe. If it is a batch process, then it will be a dictionary of Dataframes.
+2. Data is transformed, smoothed, fitted, in any combination or degree of the user's choosing.
+3. Baseline for the data is generated using one of the baseline methods.
+4. Peaks are detected.
+5. Peaks are filtered. 
+6. Bursts are detected.
+7. Bursts are filtered.
+8. Burst times and Peak time/amplitudes are used to generate results about events.
+9. Interval and Freqency Analysis.
+10. Graphs
+11. Advanced modules. 
+
+Data is a dictionary that holds all versions of the inputed data as pandas DataFrames. This can be a single time signals or an aligned table of time signals. The original time series is stored in Data['original']. The first step in any pipeline should be transformation; the resulting signal will be stored as Data['trans']. Next is baseline detection/generation, which require Data['trans'] to run. The results have different names based on the type of baseline detection that is run:
+Linear -> Data['shift']
+Rolling -> Data['rolling']
+Static -> Data['trans'] (technically, no modification is made)
+Each baseline method requires slightly different processing after this point, so mid-level wrappers direct the correct Data[type] into each function, usually gated by Settings['Baseline Type'].
+
+Settings is a dictionary of values for the different parameters that the user can easily change. Because it is just a dictionary, it is easy to modify and manage parameters during analysis. It is also simple to add features by including them in the Settings dictionary. There are several functions that were written to interactively prompt the user to enter these values as well as check them. There is also an exposed code way in the IPython Notebook, where each varible is assigned: Settings['Varible Name'] = value. Default varibles are difficult to produce, since data sets can be widely divergent. However, for specalized notebooks, it is possible to set 'good' defaults as well as 'disable' functions and not prompt them later. The only varibles that are not stored in Settings are the Baseline values, which are stored in Results['Baseline'] or Results['Baseline-Rolling'].
+
+Results is the dictionary for which all collections and types of results are stored. Any type of data can be here. There are two master results files that are generated for every analysis: Results['Bursts-Master'] and Results['Peaks-Master']. It is the event record for every time series in a file. All time series plots, with events can be plotted and saved. These are not held in memory or Results. Other plots, like HistEntropy, PSD, or Lag can be called individually or batch for display or save. 
+
+CUSTOM PIPELINES
+Here are some current pipelines that this developer is making as examples of applications for BASS.
+
+HEART: For ECG analysis, with a specalization in heart rate varibility (HRV) analysis. Processes ECG recordings one at a time or in batch. Can capture all or some parts of the PQRST wave and return measurements in the time and frequency domain. Entropy, PSD, and some predictive diagnoses.
+
+VIDEO ROIs: Processes the time series extraction of objects from video recordings (such as confocal microscopy). Offers batch or single video processing. Correlation based on time series or K-means clusting based on measurements are used to provide relational information about ROIs. If spatial data is also provided, some graphing and other spatial features are available. 
+
+NEURON MODELING: Processes the time series generated by neuron modeling algorithms. Comparitive plots of each time series event duration, inter-event interval, and histogram entropy. Raster plots can also be generated. Intra- and Inter-event spike frequecy.
+
+sEPSC/miniPSC: Allows for fine tuning to only capture the correct amplitude events. Returns number of events, amplitude of events, AUC, linear slope of rise time, and exp of fall off. Cumulative sum of something else. 
