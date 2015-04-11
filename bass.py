@@ -638,7 +638,7 @@ def user_input_trans(Settings):
         dictionary that contains the user's settings.
     Notes
     -----
-    None
+    Expand on transformation settings choices.
     Examples
     --------
     Settings = user_input_trans(Settings)
@@ -1178,7 +1178,27 @@ def rrinterval(maxptime):
         rrint.append(meas) #append the measurement to the ttotal array
     return rrint #return array
 
-def event_peakdet_settings(Settings):
+def event_peakdet_settings(Data, Settings):
+    '''
+    this function allows the user to specify and save their peak detection settings for later analysis in an interactive way using raw_input().
+    Parameters
+    ----------
+    Data: dictionary
+        should contrain ['trans']
+    Settings: dictionary
+        dictionary that contains the user's settings.
+    Returns
+    -------
+    Settings: dictionary
+        dictionary that contains the user's settings.
+    Notes
+    -----
+    What are good values for peak detection Settings? There is no one answer. Each user will need to tinker with settings. However, I can offer some discussion of each method and its parameters.
+    Delta:  
+    Examples
+    --------
+    Settings = user_input_base(Settings)
+    '''
     if 'Delta' in Settings.keys():
         print "Previous delta value: %s" %Settings['Delta']
     delta = raw_input("Enter delta value between 0 and %s: " %round(max(Data['trans'].max())-min(Data['trans'].min()),4))
@@ -1204,6 +1224,40 @@ def event_peakdet_settings(Settings):
     return Settings
 
 def event_peakdet(Data, Settings, Results, roi):
+    '''
+    Wrapper that directs one columns of data, defined by roi name into the correct post processing from peak and valley detection.
+    if no peaks or valleys are found, a failur flag is set to True and an empty dataframe is returned.
+    peakdet() returns two numpy arrays, mintab and maxtab, which contains the time and amplitude data for peaks and valleys. time is in index, so this function converts it to seconds using the sample rate (in settings). 
+    if the baseline settings is linear, then the amplidude is shifted using the baseline value from Results.
+    Parameters
+    ----------
+    Data: series
+        pandas series object that contains floats
+    Settings: dictionary
+        dictionary that contains the user's settings. requires the baseline settings be pre-specified.
+    Results: dictionary
+        an dictionary named Results, should contain the Baseline or Baseline-Rolling.
+    
+    Returns
+    -------
+    results_peaks: dataframe
+        Contains the information about each Peak (local maxima). index is peak time (seconds). columns are 'Peaks Amplitude' and 'Intervals'
+    results_valleys: dictionary
+        dataframe
+        Contains the information about each valley (local minima). index is peak time (seconds). columns are 'Valey Amplitude' and 'Intervals'
+    failure: bool
+        False if all went well, otherwise set to True to alert wrapper above that something didn't happen right.
+    Notes
+    -----
+    While the varible is called Data, it isn't the Data dictionary. this is intended to be called from inside event_peakdet_wrapper 
+
+    Examples
+    --------
+    roi = Mean1
+
+    results_peaks, results_valleys, failure = event_peakdet(Data[roi], Settings, Results, roi)
+    
+    '''
     
     failure = False
     if Settings['Baseline Type'] == 'linear':
@@ -2701,7 +2755,7 @@ def analyze(Data, Settings, Results):
     Data, Settings = load_wrapper(Data, Settings)
         
     #transform data
-    Data = transform_wrapper(Data, Settings)
+    Data, Settings = transform_wrapper(Data, Settings)
     print 'Transformation completed'
 
     #set baseline
