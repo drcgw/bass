@@ -1256,7 +1256,7 @@ def event_peakdet(Data, Settings, Results, roi):
     roi = Mean1
 
     results_peaks, results_valleys, failure = event_peakdet(Data[roi], Settings, Results, roi)
-    
+
     '''
     
     failure = False
@@ -1395,6 +1395,14 @@ def event_peakdet_wrapper(Data, Settings, Results):
     except:
         Results['Peaks-Master'] = DataFrame()
         print "No Peaks Found in any time series."
+
+    try:
+        master_valleys = pd.concat(Results['Valleys'])
+        Results['Valleys-Master'] = master_peaks
+    except:
+        Results['Valleys-Master'] = DataFrame()
+        print "No Valleys Found in any time series."
+
     return Results
 
 #
@@ -1825,31 +1833,42 @@ def Save_Results(Settings, Results):
     '''
     Save function for all files out of SWAN. All files must be present, otherwise it will not save. all files in the same folder with the same name will be saved over, except for the Settings file, which always has a unique name.
     '''
-    path = Settings['Save Location']
-    folder = Settings['Sample Folder']
-    rate = Settings['Sample Rate (s/frame)']
-    #bstart = results_bursts['Burst Start']
-    
-    #bstart_gHRV = (np.subtract(bstart,bstart[0])) #get the relative time for each burst start, needed for gHRV to run using the tot
-    #np.savetxt(r'%s/%s/%s_ttot_times.txt' %(path, folder, folder), bstart_gHRV)
-    #maxptime_gHRV = (np.subtract(maxptime, maxptime[0])) #get the relative time for each R peak, needed for gHRV to run
-    #np.savetxt(r'%s/%s/%s_rr_times.txt' %(path,folder, folder), maxptime_gHRV)
+        #Save master files 
+    Results['Peaks-Master'].to_csv(r'%s/%s_Peak_Results.csv'
+                                   %(Settings['Output Folder'], Settings['Label']))
+    Results['Valleys-Master'].to_csv(r'%s/%s_Valley_Results.csv'
+                                   %(Settings['Output Folder'], Settings['Label']))
+    Results['Bursts-Master'].to_csv(r'%s/%s_Bursts_Results.csv'
+                                    %(Settings['Output Folder'], Settings['Label']))
 
-    Results['Bursts'].to_csv(r'%s/%s/%s_burst_results.csv' %(path, folder, folder))
-    Results['Bursts Summary'].to_csv(r'%s/%s/%s_burst_results_summary.csv'%(path,folder, folder))
-    Results['Peaks'].to_csv(r'%s/%s/%s_peak_results.csv'%(path, folder, folder))
-    Results['Peaks Summary'].to_csv(r'%s/%s/%s_peak_results_summary.csv'%(path, folder, folder))
+    #Save Master Summary Files
+    burst_grouped = Results['Bursts-Master'].groupby(level=0)
+    burst_grouped = burst_grouped.describe()
+    burst_grouped.to_csv(r'%s/%s_Bursts_Results_Summary.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
     
+    peak_grouped = Results['Peaks-Master'].groupby(level=0)
+    peak_grouped= peak_grouped.describe()
+    peak_grouped.to_csv(r'%s/%s_Peaks_Results_Summary.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
+
+    valley_grouped = Results['Valleys-Master'].groupby(level=0)
+    valley_grouped= valley_grouped.describe()
+    valley_grouped.to_csv(r'%s/%s_Valley_Results_Summary.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
+
+    #save settings
     Settings_panda = DataFrame.from_dict(Settings, orient='index')
     now = datetime.datetime.now()
     colname = 'Settings: ' + str(now)
     Settings_panda.columns = [colname]
     Settings_panda = Settings_panda.sort()
-    Settings_panda.to_csv(r'%s/%s/%s_%s.csv'%(path, folder, 
-        folder,now.strftime('%Y_%m_%d__%H_%M_%S')))
+    Settings_panda.to_csv(r"%s/%s_Settings_%s.csv"%(Settings['Output Folder'], 
+                                                 Settings['Label'], 
+                                                 now.strftime('%Y_%m_%d__%H_%M_%S')))
     
     print "All results saved to", path+'/'+folder
-    print "Thank you for chosing SWAN for all your basic analysis needs. Proceed for graphs and advanced analysis."
+    print "Thank you for chosing BASS.py for all your basic analysis needs. Proceed for graphs and advanced analysis."
     
 #
 #Line Plots
