@@ -1057,7 +1057,7 @@ def graph_baseline(Data, Settings, Results):
     
     if Settings['Baseline Type'] == 'linear':
         try:
-            plt.plot(Data['shift'].index, Data['shift'], 'k') #in this instance, baseline = shift
+            plt.plot(Data['shift'].index, Data['shift'].ix[:,0], 'k') #in this instance, baseline = shift
             plt.xlabel('Time (s)')
             plt.ylabel('Amp')
             plt.hlines(0,Data['shift'].index[0],Data['shift'].index[-1],colors='b')
@@ -1867,8 +1867,30 @@ def Save_Results(Settings, Results):
                                                  Settings['Label'], 
                                                  now.strftime('%Y_%m_%d__%H_%M_%S')))
     
-    print "All results saved to", path+'/'+folder
+    print "All results saved to: ", Settings['Output Folder']
     print "Thank you for chosing BASS.py for all your basic analysis needs. Proceed for graphs and advanced analysis."
+    print "Analysis Complete"
+    
+    print "\n--------------------------------------------"
+
+    print "Data Column Names/Keys"
+    print "-----"
+    for name in Data['original']:
+        print name
+    print "\n--------------------------------------------"
+    print "Available Measurements from Peaks for further analysis:"
+    print "-----"
+    for label, col in Results['Peaks-Master'].iteritems():
+        print label
+    print "\n--------------------------------------------"
+    print "Available Measurements from Bursts for further analysis:"
+    print "-----"
+    for label, col in Results['Bursts-Master'].iteritems():
+        print label
+    
+    print "\n---------------------------"
+    print '|Event Detection Complete!|'
+    print "---------------------------"
     
 #
 #Line Plots
@@ -1877,13 +1899,104 @@ def Save_Results(Settings, Results):
 #
 
 def plot_rawdata(Data):
-    figure = plt.plot(Data['original'].index, Data['original'], 'k')
-    plt.title('Raw Data')
+    figure = plt.plot(Data['original'].index, Data['original'].ix[:,0], 'k')
+    plt.title(r'Raw Data %s' %Data['original'].ix[:,0].name)
     plt.xlabel('Time (s)')
     plt.ylabel('Amplitude')
     DataCursor(figure)
     plt.show(figure) 
 
+def results_timeseries_plot(Data, Settings, Results, roi):
+    '''
+    plots a dual line plot of your raw signal and your transformed signal with events overlayed.
+    automatically the first 10 seconds of data are displayed. you can pan around inside to find the part you want to see.
+    '''
+    
+    if roi.lower() == 'random':
+        rand_int = np.random.randint(len(Data['original'].columns))
+        roi = Data['original'].columns[rand_int]
+    
+    #set the correct data array
+    if Settings['Baseline Type'] == 'static':
+        data_temp = Data['trans']
+    elif Settings['Baseline Type'] == 'linear': 
+        data_temp = Data['shift']
+    elif Settings['Baseline Type'] == 'rolling':
+        data_temp = Data['rolling']
+
+    fig, ax = plt.subplots(2, sharex= True)
+    
+    ax[0].plot(Data['original'].index, Data['original'][roi], 'k')
+    ax[0].set_title('Raw Data')
+    ax[0].set_ylabel('Amplitude')
+
+    ax[1].plot(data_temp.index, data_temp[roi], color = 'k', label= 'Time Series') #plot time series
+    ax[1].ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
+    ax[1].xlim(xmin = -1)
+    ax[1].title(roi+' Events')
+    
+    #plot peaks and valleys
+    try:
+        ax[1].plot(Results['Peaks'][roi].index, Results['Peaks'][roi]['Peaks Amplitude'], 
+                 marker = '^', color = 'b', linestyle = 'None', alpha = 1, label = 'RAIN Peak', markersize = 5)
+    except:
+        pass
+    try:
+        ax[1].plot(Results['Valleys'][roi].index, Results['Valleys'][roi]['Valley Amplitude'], 
+                 marker = 'v', color = 'm', linestyle = 'None', alpha = 1, label = 'RAIN Valley', markersize = 5)
+    except:
+        pass
+    #plot bursts
+    try:
+        if Settings['Baseline Type'] == 'static':
+            start_y = []
+            end_y = []
+            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
+                start_y.append(Settings['Threshold'])
+            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
+                end_y.append(Settings['Threshold'])
+            ax[1].plot(Results['Bursts'][roi]['Burst Start'], start_y,
+                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
+            ax[1].plot(Results['Bursts'][roi]['Burst End'], end_y,
+                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
+            
+        elif Settings['Baseline Type'] == 'linear': 
+            start_y = []
+            end_y = []
+            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
+                start_y.append(Results['Baseline'][roi]*Settings['Threshold'])
+            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
+                end_y.append(Results['Baseline'][roi]*Settings['Threshold'])
+            ax[1].plot(Results['Bursts'][roi]['Burst Start'], start_y,
+                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
+            ax[1].plot(Results['Bursts'][roi]['Burst End'], end_y,
+                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
+
+
+        elif Settings['Baseline Type'] == 'rolling':
+            ax[1].plot(Results['Bursts'][roi]['Burst Start'], Results['Bursts'][roi]['Burst Start Amplitude'],
+                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
+            ax[1].plot(Results['Bursts'][roi]['Burst End'], Results['Bursts'][roi]['Burst End Amplitude'],
+                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
+            ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+            ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+    
+    except:#this would be the case that no bursts were detected
+        pass
+    
+    if Settings['Baseline Type'] == 'static':
+        ax[1].hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
+
+    elif Settings['Baseline Type'] == 'linear': 
+        ax[1].hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
+                   Data['original'].index[-1], 'b', label = 'RAIN threshold')
+        ax[1].hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
+        
+    elif Settings['Baseline Type'] == 'rolling':
+        ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+        ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+
+    fig.show()
 
 def graph_detected_events_save(Data, Settings, Results, roi, lcpro = False):
     '''
@@ -2296,7 +2409,7 @@ def poincare(data_array):
     equations are derived from Brennan and http://www.mif.pg.gda.pl/homepages/graff/Tzaa/Guzik_geometry_asymetry.pdf cause OMG THIS MAKES SENSE NOW
     """
     
-    x = data_array[:(len(data_array)-1)]
+    x = data_array[:-1]
     y = data_array[1:]
     
     xc = np.mean(x)
