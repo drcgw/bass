@@ -855,7 +855,7 @@ def graph_trans(Data):
     try:
         
         plt.plot(Data['trans'].index, Data['trans'].ix[:,0], 'k')
-        plt.title('Transformed Data')
+        plt.title(r'Transformed Data: %s' %(Data['trans'].column[0]))
         plt.xlabel('Time (s)')
         plt.ylabel('Relative Amplitude')
         
@@ -1063,7 +1063,7 @@ def graph_baseline(Data, Settings, Results):
             plt.hlines(0,Data['shift'].index[0],Data['shift'].index[-1],colors='b')
             #plt.xlim(xmin = min(time), xmax = (min(time)+10))
             #plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
-            plt.title('Linear Baseline')
+            plt.title(r'Linear Baseline: %s' %(Data['trans'].column[0]))
 
             plt.show()
         except:
@@ -1075,7 +1075,7 @@ def graph_baseline(Data, Settings, Results):
             plt.xlabel('Time (s)')
             plt.ylabel('Amp')
             plt.plot(Results['Baseline-Rolling'].index, Results['Baseline-Rolling'].ix[:,0], 'b') #in this instance, baseline = rolling average
-            plt.title('Rolling Baseline')
+            plt.title(r'Rolling Baseline: ' %(Data['trans'].column[0]))
             #plt.xlim(xmin = min(time), xmax = (min(time)+10))
            # plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
             
@@ -1829,7 +1829,7 @@ def burstarea(data, time, burst_start, burst_end, dx = 10):
 #Save
 #
 #
-def Save_Results(Settings, Results):
+def Save_Results(Data, Settings, Results):
     '''
     Save function for all files out of SWAN. All files must be present, otherwise it will not save. all files in the same folder with the same name will be saved over, except for the Settings file, which always has a unique name.
     '''
@@ -1927,13 +1927,13 @@ def results_timeseries_plot(Data, Settings, Results, roi):
     fig, ax = plt.subplots(2, sharex= True)
     
     ax[0].plot(Data['original'].index, Data['original'][roi], 'k')
-    ax[0].set_title('Raw Data')
+    ax[0].set_title(roi+' Raw Data')
     ax[0].set_ylabel('Amplitude')
 
     ax[1].plot(data_temp.index, data_temp[roi], color = 'k', label= 'Time Series') #plot time series
-    ax[1].ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
-    ax[1].xlim(xmin = -1)
-    ax[1].title(roi+' Events')
+    ax[1].set_ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
+    ax[1].set_xlim(xmin = -1)
+    ax[1].set_title(roi+' Events')
     
     #plot peaks and valleys
     try:
@@ -2840,6 +2840,95 @@ def moving_statistics(event_type, meas, window, Data, Settings, Results):
         
         print meas, 'Std'
         print Results['Moving Stats'][r'%s-Std'%meas]
+        return Results
+
+def ap_entropy_wrapper(event_type, meas, Data, Settings, Results):
+    """
+    Calculates approximate entropy value. this is a Wrapper to handle varibles in and out of ap_entropy() correctly. Takes two additional parameters that dictate which measurement will be executed. If meas is set to 'all', then all available measurements from the event_type chosen will be calculated iteratevely. 
+    For the aprox ent call, M is set to 2 and R is 0.2*std(measurement). these values cannot be changed easily, but can be modified with the source code.
+    Parameters
+    ----------
+    event_type: string
+        A string that should be either 'Peaks' or 'Bursts', which will tell the function 
+        which results to pull the measurement from.
+    meas: string
+        A string that specifies which measurement type to use for the figure.
+    Data: dictionary
+        dictionary containing the pandas dataframes that store the data.
+        this function uses the column names of the original data file to organize the 
+         Entropy table.
+    Settings: dictionary
+
+    Results: dictionary
+        The dictionary that contains all of the results. Results['Peaks'] and/or Results['Bursts']
+        is used. Results['Peaks-Master'] or Results['Bursts-Master'] are also used to 
+    
+    Returns
+    -------
+    Results: dictionary
+        The dictionary that contains all of the results. Results['Approximate Entropy'], a dataframe is created or added to.
+    Notes
+    -----
+    There is only one approximate entropy Dataframe, which is updated for each iteration of this function. It is 
+    displayed and saved out automatically to Settings['output folder'].
+    This function breaks the general rule of 'Three arguments in, Three arguments out.' Mostly because the 'event_type'
+    and 'meas' are ment to be temporary varibles anyways. Saving them out doesn't make much sense.
+
+    See ap_entropy for more information about what approximate Entropy is.
+    Examples
+    --------
+    event_type = 'Bursts'
+    meas = 'all'
+    Results = ap_entropy_wrapper(event_type, meas, Data, Settings, Results)
+    Results['Approximate Entropy']
+
+    References
+    ----------
+    .. [1] Yentes et al., 2013. "The appropriate use of approximate entropy and sample entropy with short data sets." PMID: 23064819
+    """
+    try:
+        import pyeeg
+    except ImportError:
+        print "You do not have the pyeeg module and cannot use this code." 
+    
+    if 'Approximate Entropy' not in Results.keys():
+        Results['Approximate Entropy'] = DataFrame(index = Data['original'].columns)
+    
+    if event_type.lower() == 'peaks':
+        measurement = Results['Peaks']
+        columns = Results['Peaks-Master']
+
+    elif event_type.lower() == 'bursts':
+        measurement = Results['Bursts']
+        columns = Results['Bursts-Master']
+    else:
+        raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
+    
+    if meas.lower() == 'all':
+        for name in columns:
+
+            Results = ap_entropy_wrapper(event_type, name, Data, Settings, Results)
+
+        print "All %s measurements analyzed." %(event_type)
+        return Results
+
+    else:
+        temp_apent = Series(index = Data['original'].columns)
+        for key, value in measurement.iteritems():
+            
+            temp_list = value[meas].tolist() #copy the correct array into a list
+            if temp_list[-1] == NaN:
+                temp_list = temp_list[:-1]
+            try:
+                ap_ent = ap_entropy(temp_list, 2, (0.2*np.std(temp_list)))
+                temp_apent[key] = ap_ent
+            except:
+                ap_ent = NaN
+                temp_apent[key] = ap_ent
+            
+        Results['Approximate Entropy'][meas] = temp_apent
+        Results['Approximate Entropy'].to_csv(r'%s/%s_Approximate_Entropy.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
         return Results
 
 def analyze(Data, Settings, Results):
