@@ -2463,6 +2463,45 @@ def poincare_plot(series):
 #Power Spectral Density
 #
 #
+
+def psd_signal(version, key, Data, Settings, Results):
+    '''
+    get powerspectral density from signal data
+    '''
+    sig = Data[version][key].tolist()
+    hertz = 2/Settings['Sample Rate (s/frame)']
+    Fxx, Pxx = scipy.signal.welch(sig, fs = hertz, window="hanning", 
+                                  nperseg=256, noverlap=128, detrend="linear")
+    
+
+    plt.plot(Fxx, Pxx)
+    plt.xlim(xmin = 0, xmax = hertz/2)
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel(r"PSD $(ms^ 2$/Hz)")
+    plt.title("PSD-%s: %s" %(version, key))
+    plt.show()
+    
+    FXX = Series(Fxx)
+    PXX = Series(Pxx)
+    if 'PSD-Signal'not in Results.keys():
+        Results['PSD-Signal'] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
+    
+    results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
+
+    results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
+                               FXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), dx =dx)
+    results_psd['VLF'] = scipy.integrate.simps(PXX[(ulf<FXX) & (FXX<=vlf)].tolist(),
+                               FXX[(ulf<FXX) & (FXX<=vlf)].tolist(), dx= dx)
+    results_psd['LF'] = scipy.integrate.simps(PXX[(vlf<FXX) & (FXX<=lf)].tolist(),
+                              FXX[(vlf<FXX) & (FXX<=lf)].tolist(), dx= dx)
+    results_psd['HF'] = scipy.integrate.simps(PXX[(lf<FXX) & (FXX<=hf)].tolist(),
+                              FXX[(lf<FXX) & (FXX<=hf)].tolist(), dx= dx)
+    results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
+    
+    Results['PSD-Signal'][key] = results_psd
+    
+    return Results
+
 def PSD_Peaks(Results, results_PSD, Settings_PSD):
     Fxx_rii, Pxx_rii = PSD_rri(Results['Peaks'], hz)
     results_PSD['Peakdet'] = Results_PSD(Fxx_rii, Pxx_rii)
@@ -2574,7 +2613,7 @@ def Results_PSD(Fxx, Pxx):
     results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
     return results_psd
 #
-#Histogram Entropy
+#Entropy
 #
 #
 def histent(data_list):
@@ -2716,6 +2755,188 @@ def histent_wrapper(event_type, meas, Data, Settings, Results):
                                            %(Settings['Output Folder'], Settings['Label']))
         return Results
 
+def ap_entropy_wrapper(event_type, meas, Data, Settings, Results):
+    """
+    Calculates approximate entropy value. this is a Wrapper to handle varibles in and out of ap_entropy() correctly. Takes two additional parameters that dictate which measurement will be executed. If meas is set to 'all', then all available measurements from the event_type chosen will be calculated iteratevely. 
+    For the aprox ent call, M is set to 2 and R is 0.2*std(measurement). these values cannot be changed easily, but can be modified with the source code.
+    Parameters
+    ----------
+    event_type: string
+        A string that should be either 'Peaks' or 'Bursts', which will tell the function 
+        which results to pull the measurement from.
+    meas: string
+        A string that specifies which measurement type to use for the figure.
+    Data: dictionary
+        dictionary containing the pandas dataframes that store the data.
+        this function uses the column names of the original data file to organize the 
+         Entropy table.
+    Settings: dictionary
+
+    Results: dictionary
+        The dictionary that contains all of the results. Results['Peaks'] and/or Results['Bursts']
+        is used. Results['Peaks-Master'] or Results['Bursts-Master'] are also used to 
+    
+    Returns
+    -------
+    Results: dictionary
+        The dictionary that contains all of the results. Results['Approximate Entropy'], a dataframe is created or added to.
+    Notes
+    -----
+    There is only one approximate entropy Dataframe, which is updated for each iteration of this function. It is 
+    displayed and saved out automatically to Settings['output folder'].
+    This function breaks the general rule of 'Three arguments in, Three arguments out.' Mostly because the 'event_type'
+    and 'meas' are ment to be temporary varibles anyways. Saving them out doesn't make much sense.
+
+    See ap_entropy for more information about what approximate Entropy is.
+    Examples
+    --------
+    event_type = 'Bursts'
+    meas = 'all'
+    Results = ap_entropy_wrapper(event_type, meas, Data, Settings, Results)
+    Results['Approximate Entropy']
+
+    References
+    ----------
+    .. [1] Yentes et al., 2013. "The appropriate use of approximate entropy and sample entropy with short data sets." PMID: 23064819
+    """
+    try:
+        import pyeeg
+    except ImportError:
+        print "You do not have the pyeeg module and cannot use this code." 
+    
+    if 'Approximate Entropy' not in Results.keys():
+        Results['Approximate Entropy'] = DataFrame(index = Data['original'].columns)
+    
+    if event_type.lower() == 'peaks':
+        measurement = Results['Peaks']
+        columns = Results['Peaks-Master']
+
+    elif event_type.lower() == 'bursts':
+        measurement = Results['Bursts']
+        columns = Results['Bursts-Master']
+    else:
+        raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
+    
+    if meas.lower() == 'all':
+        for name in columns:
+
+            Results = ap_entropy_wrapper(event_type, name, Data, Settings, Results)
+
+        print "All %s measurements analyzed." %(event_type)
+        return Results
+
+    else:
+        temp_apent = Series(index = Data['original'].columns)
+        for key, value in measurement.iteritems():
+            
+            temp_list = value[meas].tolist() #copy the correct array into a list
+            if temp_list[-1] == NaN:
+                temp_list = temp_list[:-1]
+            try:
+                ap_ent = ap_entropy(temp_list, 2, (0.2*np.std(temp_list)))
+                temp_apent[key] = ap_ent
+            except:
+                ap_ent = NaN
+                temp_apent[key] = ap_ent
+            
+        Results['Approximate Entropy'][meas] = temp_apent
+        Results['Approximate Entropy'].to_csv(r'%s/%s_Approximate_Entropy.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
+        return Results
+
+def samp_entropy_wrapper(event_type, meas, Data, Settings, Results):
+    """
+    Calculates approximate entropy value. this is a Wrapper to handle varibles in and out of samp_entropy() correctly. Takes two additional parameters that dictate which measurement will be executed. If meas is set to 'all', then all available measurements from the event_type chosen will be calculated iteratevely. 
+    For the sample ent call, M is set to 2 and R is 0.2*std(measurement). these values cannot be changed easily, but can be modified with the source code.
+    Parameters
+    ----------
+    event_type: string
+        A string that should be either 'Peaks' or 'Bursts', which will tell the function 
+        which results to pull the measurement from.
+    meas: string
+        A string that specifies which measurement type to use for the figure.
+    Data: dictionary
+        dictionary containing the pandas dataframes that store the data.
+        this function uses the column names of the original data file to organize the 
+         Entropy table.
+    Settings: dictionary
+
+    Results: dictionary
+        The dictionary that contains all of the results. Results['Peaks'] and/or Results['Bursts']
+        is used. Results['Peaks-Master'] or Results['Bursts-Master'] are also used to 
+    
+    Returns
+    -------
+    Results: dictionary
+        The dictionary that contains all of the results. Results['Sample Entropy'], a dataframe is created or added to.
+    Notes
+    -----
+    There is only one Sample entropy Dataframe, which is updated for each iteration of this function. It is 
+    displayed and saved out automatically to Settings['output folder'].
+    This function breaks the general rule of 'Three arguments in, Three arguments out.' Mostly because the 'event_type'
+    and 'meas' are ment to be temporary varibles anyways. Saving them out doesn't make much sense.
+
+    See samp_entropy for more information about what Sample Entropy is.
+    Examples
+    --------
+    event_type = 'Bursts'
+    meas = 'all'
+    Results = samp_entropy_wrapper(event_type, meas, Data, Settings, Results)
+    Results['Sample Entropy']
+
+    References
+    ----------
+    .. [1] Yentes et al., 2013. "The appropriate use of approximate entropy and sample entropy with short data sets." PMID: 23064819
+    """
+    try:
+        import pyeeg
+    except ImportError:
+        print "You do not have the pyeeg module and cannot use this code." 
+    
+    if 'Sample Entropy' not in Results.keys():
+        Results['Sample Entropy'] = DataFrame(index = Data['original'].columns)
+    
+    if event_type.lower() == 'peaks':
+        measurement = Results['Peaks']
+        columns = Results['Peaks-Master']
+
+    elif event_type.lower() == 'bursts':
+        measurement = Results['Bursts']
+        columns = Results['Bursts-Master']
+    else:
+        raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
+    
+    if meas.lower() == 'all':
+        for name in columns:
+
+            Results = samp_entropy_wrapper(event_type, name, Data, Settings, Results)
+
+        print "All %s measurements analyzed." %(event_type)
+        return Results
+
+    else:
+        temp_sampent = Series(index = Data['original'].columns)
+        for key, value in measurement.iteritems():
+            
+            temp_list = value[meas].tolist() #copy the correct array into a list
+            if temp_list[-1] == NaN:
+                temp_list = temp_list[:-1]
+            try:
+                samp_ent = samp_entropy(temp_list, 2, (0.2*np.std(temp_list)))
+                temp_sampent[key] = samp_ent
+            except:
+                samp_ent = NaN
+                temp_sampent[key] = samp_ent
+            
+        Results['Sample Entropy'][meas] = temp_sampent
+        Results['Sample Entropy'].to_csv(r'%s/%s_Sample_Entropy.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
+        return Results
+
+#
+#Moments
+#
+#
 def moving_statistics(event_type, meas, window, Data, Settings, Results):
     """
     Generates the moving mean, standard deviation, and count for a given measurement.
@@ -2842,95 +3063,10 @@ def moving_statistics(event_type, meas, window, Data, Settings, Results):
         print Results['Moving Stats'][r'%s-Std'%meas]
         return Results
 
-def ap_entropy_wrapper(event_type, meas, Data, Settings, Results):
-    """
-    Calculates approximate entropy value. this is a Wrapper to handle varibles in and out of ap_entropy() correctly. Takes two additional parameters that dictate which measurement will be executed. If meas is set to 'all', then all available measurements from the event_type chosen will be calculated iteratevely. 
-    For the aprox ent call, M is set to 2 and R is 0.2*std(measurement). these values cannot be changed easily, but can be modified with the source code.
-    Parameters
-    ----------
-    event_type: string
-        A string that should be either 'Peaks' or 'Bursts', which will tell the function 
-        which results to pull the measurement from.
-    meas: string
-        A string that specifies which measurement type to use for the figure.
-    Data: dictionary
-        dictionary containing the pandas dataframes that store the data.
-        this function uses the column names of the original data file to organize the 
-         Entropy table.
-    Settings: dictionary
-
-    Results: dictionary
-        The dictionary that contains all of the results. Results['Peaks'] and/or Results['Bursts']
-        is used. Results['Peaks-Master'] or Results['Bursts-Master'] are also used to 
-    
-    Returns
-    -------
-    Results: dictionary
-        The dictionary that contains all of the results. Results['Approximate Entropy'], a dataframe is created or added to.
-    Notes
-    -----
-    There is only one approximate entropy Dataframe, which is updated for each iteration of this function. It is 
-    displayed and saved out automatically to Settings['output folder'].
-    This function breaks the general rule of 'Three arguments in, Three arguments out.' Mostly because the 'event_type'
-    and 'meas' are ment to be temporary varibles anyways. Saving them out doesn't make much sense.
-
-    See ap_entropy for more information about what approximate Entropy is.
-    Examples
-    --------
-    event_type = 'Bursts'
-    meas = 'all'
-    Results = ap_entropy_wrapper(event_type, meas, Data, Settings, Results)
-    Results['Approximate Entropy']
-
-    References
-    ----------
-    .. [1] Yentes et al., 2013. "The appropriate use of approximate entropy and sample entropy with short data sets." PMID: 23064819
-    """
-    try:
-        import pyeeg
-    except ImportError:
-        print "You do not have the pyeeg module and cannot use this code." 
-    
-    if 'Approximate Entropy' not in Results.keys():
-        Results['Approximate Entropy'] = DataFrame(index = Data['original'].columns)
-    
-    if event_type.lower() == 'peaks':
-        measurement = Results['Peaks']
-        columns = Results['Peaks-Master']
-
-    elif event_type.lower() == 'bursts':
-        measurement = Results['Bursts']
-        columns = Results['Bursts-Master']
-    else:
-        raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
-    
-    if meas.lower() == 'all':
-        for name in columns:
-
-            Results = ap_entropy_wrapper(event_type, name, Data, Settings, Results)
-
-        print "All %s measurements analyzed." %(event_type)
-        return Results
-
-    else:
-        temp_apent = Series(index = Data['original'].columns)
-        for key, value in measurement.iteritems():
-            
-            temp_list = value[meas].tolist() #copy the correct array into a list
-            if temp_list[-1] == NaN:
-                temp_list = temp_list[:-1]
-            try:
-                ap_ent = ap_entropy(temp_list, 2, (0.2*np.std(temp_list)))
-                temp_apent[key] = ap_ent
-            except:
-                ap_ent = NaN
-                temp_apent[key] = ap_ent
-            
-        Results['Approximate Entropy'][meas] = temp_apent
-        Results['Approximate Entropy'].to_csv(r'%s/%s_Approximate_Entropy.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
-        return Results
-
+#
+#Pipelines
+#
+#
 def analyze(Data, Settings, Results):
     """
     The pipeline for event detection. Follows the strict '3 arguments in, 3 arguments out'
