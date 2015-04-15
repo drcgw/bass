@@ -1945,7 +1945,7 @@ def plot_rawdata(Data):
     DataCursor(figure)
     plt.show(figure) 
 
-def results_timeseries_plot(Data, Settings, Results, roi):
+def results_timeseries_plot(roi, start, end, Data, Settings, Results):
     '''
     plots a dual line plot of your raw signal and your transformed signal with events overlayed.
     automatically the first 10 seconds of data are displayed. you can pan around inside to find the part you want to see.
@@ -1963,25 +1963,28 @@ def results_timeseries_plot(Data, Settings, Results, roi):
     elif Settings['Baseline Type'] == 'rolling':
         data_temp = Data['rolling']
 
-    fig, ax = plt.subplots(2, sharex= True)
     
-    ax[0].plot(Data['original'].index, Data['original'][roi], 'k')
-    ax[0].set_title(roi+' Raw Data')
-    ax[0].set_ylabel('Amplitude')
+    f1 = plt.subplot(211)
+    f1.plot(Data['original'].index, Data['original'][roi], 'k')
+    f1.set_title(roi +' Raw Data')
+    f1.set_ylabel('Amplitude')
+    
 
-    ax[1].plot(data_temp.index, data_temp[roi], color = 'k', label= 'Time Series') #plot time series
-    ax[1].set_ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
-    ax[1].set_xlim(xmin = -1)
-    ax[1].set_title(roi+' Events')
+    f2 = plt.subplot(212, sharex=f1)
+    f2.plot(data_temp.index, data_temp[roi], color = 'k', label= 'Time Series') #plot time series
+    f2.set_ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
+    f2.set_xlim(xmin = start, xmax = end)
+    f2.set_ylabel('Relative Amplitude')
+    f2.set_title(roi+' Events')
     
     #plot peaks and valleys
     try:
-        ax[1].plot(Results['Peaks'][roi].index, Results['Peaks'][roi]['Peaks Amplitude'], 
+        f2.plot(Results['Peaks'][roi].index, Results['Peaks'][roi]['Peaks Amplitude'], 
                  marker = '^', color = 'b', linestyle = 'None', alpha = 1, label = 'RAIN Peak', markersize = 5)
     except:
         pass
     try:
-        ax[1].plot(Results['Valleys'][roi].index, Results['Valleys'][roi]['Valley Amplitude'], 
+        f2.plot(Results['Valleys'][roi].index, Results['Valleys'][roi]['Valley Amplitude'], 
                  marker = 'v', color = 'm', linestyle = 'None', alpha = 1, label = 'RAIN Valley', markersize = 5)
     except:
         pass
@@ -1994,9 +1997,9 @@ def results_timeseries_plot(Data, Settings, Results, roi):
                 start_y.append(Settings['Threshold'])
             for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
                 end_y.append(Settings['Threshold'])
-            ax[1].plot(Results['Bursts'][roi]['Burst Start'], start_y,
+            f2.plot(Results['Bursts'][roi]['Burst Start'], start_y,
                      marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            ax[1].plot(Results['Bursts'][roi]['Burst End'], end_y,
+            f2.plot(Results['Bursts'][roi]['Burst End'], end_y,
                      marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
             
         elif Settings['Baseline Type'] == 'linear': 
@@ -2006,36 +2009,38 @@ def results_timeseries_plot(Data, Settings, Results, roi):
                 start_y.append(Results['Baseline'][roi]*Settings['Threshold'])
             for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
                 end_y.append(Results['Baseline'][roi]*Settings['Threshold'])
-            ax[1].plot(Results['Bursts'][roi]['Burst Start'], start_y,
+            f2.plot(Results['Bursts'][roi]['Burst Start'], start_y,
                      marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            ax[1].plot(Results['Bursts'][roi]['Burst End'], end_y,
+            f2.plot(Results['Bursts'][roi]['Burst End'], end_y,
                      marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
 
 
         elif Settings['Baseline Type'] == 'rolling':
-            ax[1].plot(Results['Bursts'][roi]['Burst Start'], Results['Bursts'][roi]['Burst Start Amplitude'],
+            f2.plot(Results['Bursts'][roi]['Burst Start'], Results['Bursts'][roi]['Burst Start Amplitude'],
                      marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            ax[1].plot(Results['Bursts'][roi]['Burst End'], Results['Bursts'][roi]['Burst End Amplitude'],
+            f2.plot(Results['Bursts'][roi]['Burst End'], Results['Bursts'][roi]['Burst End Amplitude'],
                      marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
-            ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-            ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+            f2.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+            f2.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
     
     except:#this would be the case that no bursts were detected
         pass
+    try:
+        if Settings['Baseline Type'] == 'static':
+            f2.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
+
+        elif Settings['Baseline Type'] == 'linear': 
+            f2.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
+                       Data['original'].index[-1], 'b', label = 'RAIN threshold')
+            f2.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
+
+        elif Settings['Baseline Type'] == 'rolling':
+            f2.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+            f2.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+    except:
+        pass
     
-    if Settings['Baseline Type'] == 'static':
-        ax[1].hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
-
-    elif Settings['Baseline Type'] == 'linear': 
-        ax[1].hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
-                   Data['original'].index[-1], 'b', label = 'RAIN threshold')
-        ax[1].hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
-        
-    elif Settings['Baseline Type'] == 'rolling':
-        ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-        ax[1].plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
-
-    fig.show()
+    plt.show()
 
 def graph_detected_events_save(Data, Settings, Results, roi, lcpro = False):
     '''
@@ -2580,6 +2585,94 @@ def psd_signal(version, key, Data, Settings, Results):
     Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv'
                                            %(Settings['Output Folder'], Settings['Label']))
     Settings['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal_Settings.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
+    return Results
+
+def psd_event(event_type, meas, key, Data, Settings, Results):
+    '''
+    get powerspectral density from one column's event measurement.
+    
+    example:
+    event_type = 'Peaks'
+    meas = 'Intervals'
+    key = 'Mean1'
+    
+    #adopted form Rhenan Bartels Ferreira 
+    #https://github.com/RhenanBartels/biosignalprocessing/blob/master/psdRRi.py
+    '''
+    
+    if event_type.lower() == 'peaks':
+        measurement = Results['Peaks']
+        columns = Results['Peaks-Master']
+
+    elif event_type.lower() == 'bursts':
+        measurement = Results['Bursts']
+        columns = Results['Bursts-Master']
+    else:
+        raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
+
+
+    freq_list = measurement[key][meas].tolist()
+    time_list = measurement[key].index.tolist()
+
+    if freq_list[-1] != freq_list[-1]: #check if NaN
+        freq_list = freq_list[:-1]
+        time_list = time_list[:-1]
+        
+
+    #evenly spaced array using interpolation hertz        
+    
+    tx = np.arange(time_list[0], time_list[-1], (1.0/(Settings['PSD-Event']['hz'])))
+   
+    #interpolate!
+    tck = scipy.interpolate.splrep(time_list, freq_list, s = 0)
+    
+    freq_x = scipy.interpolate.splev(tx, tck, der = 0)
+    
+    #Number os estimations
+    P = int((len(tx) - 256 / 128)) + 1 #AD doesn't know what this does, but i dare not touch a damn thing.
+    
+    Fxx, Pxx = scipy.signal.welch(freq_x, fs = Settings['PSD-Event']['hz'], window="hanning", 
+                                  nperseg=256, noverlap=128, detrend="linear")
+    
+
+    plt.plot(Fxx, Pxx)
+    plt.xlim(xmin = 0, xmax = Settings['PSD-Event']['hz']/2)
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel(r"PSD $(ms^ 2$/Hz)")
+    plt.title("PSD-%s: %s-%s" %(key, event_type, meas))
+    plt.show()
+    
+    FXX = Series(Fxx)
+    PXX = Series(Pxx)
+    if 'PSD-Event'not in Results.keys():
+        Results['PSD-Event'] = {}
+    
+    if key not in Results['PSD-Event'].keys():
+        Results['PSD-Event'][key] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
+    
+    results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
+
+    results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
+                               FXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
+                               dx =Settings['PSD-Event']['dx'])
+    results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(),
+                               FXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(), 
+                               dx= Settings['PSD-Event']['dx'])
+    results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(),
+                              FXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(), 
+                              dx= Settings['PSD-Event']['dx'])
+    results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(),
+                              FXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(), 
+                              dx= Settings['PSD-Event']['dx'])
+    results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
+    
+    Results['PSD-Event'][key][meas] = results_psd
+    
+    temp_psd_master = pd.concat(Results['PSD-Event'])
+    temp_psd_master.to_csv(r'%s/%s_PSD_Events.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
+    Settings['PSD-Event'].to_csv(r'%s/%s_PSD_Events_Settings.csv'
                                            %(Settings['Output Folder'], Settings['Label']))
     return Results
 
