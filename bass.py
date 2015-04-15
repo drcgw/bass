@@ -2364,40 +2364,70 @@ def raster(Results):
 #Event Frequency plots
 #
 #
-def frequency_plot_peaks(Results):
-    rri = Results['Peaks']['Intervals'].tolist()
-    del rri[-1] #the last value is NaN, so we delete it.
-    rri_new = []
-    for i in rri:
-        bpm = 60/i
-        rri_new.append(bpm)
-    time_int = Results['Peaks'].index.tolist()
-    del time_int[-1] #must be the same length as rri
+def frequency_plot(event_type, meas, key, Data, Settings, Results):
+    """
+    Generate measurement per minue vs seconds. does not support 'all'
+    Parameters
+    ----------
+    event_type: string
+        A string that should be either 'Peaks' or 'Bursts', which will tell the function 
+        which results to pull the measurement from.
+    meas: string
+        A string that specifies which measurement type to use for the figure.
+    Data: dictionary
+        dictionary containing the pandas dataframes that store the data.
+        this function uses the column names of the original data file to organize the 
+         Entropy table.
+    Settings: dictionary
 
-    plt.ylabel('Event Rate (events/min.)')
-    plt.xlabel('Time (s)')
-    plt.title('Event Freqency-Peak detection')
-    plt.plot(time_int, rri_new)
-    plt.show()
+    Results: dictionary
+        The dictionary that contains all of the results. Results['Peaks'] and/or Results['Bursts']
+        is used. Results['Peaks-Master'] or Results['Bursts-Master'] are also used to 
     
-def frequency_plot_bursts(Results):
-    tct = Results['Bursts']['Total Cycle Time'].tolist()
-    del tct[-1] #the last value is NaN, so we delete it.
+    Returns
+    -------
+    NONE
+    Notes
+    -----
+    
+    Examples
+    --------
 
-    tct_new = []
-    for i in tct:
-        bpm = 60/i
-        tct_new.append(bpm)
-    tct = tct_new
+    References
+    ----------
 
-    time_int = Results['Bursts']['Burst Start'].tolist()
-    del time_int[-1] #must be the same length as rri
-    plt.plot(time_int, tct)
-    plt.ylabel('Event Rate (events/min.)')
-    plt.xlabel('Time (s)')
-    plt.title('Event Freqency-Burst detection')
-    plt.show()
+    """
+    
+    if event_type.lower() == 'peaks':
+        measurement = Results['Peaks']
+        columns = Results['Peaks-Master']
 
+    elif event_type.lower() == 'bursts':
+        measurement = Results['Bursts']
+        columns = Results['Bursts-Master']
+    else:
+        raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
+
+    try:
+        freq_list = measurement[key][meas].tolist()
+        time_list = measurement[key].index.tolist()
+
+        if freq_list[-1] == NaN:
+            freq_list = freq_list[:-1]
+            time_list = time_list[:-1]
+        
+        freq_min = []
+        for i in freq_list:
+            freq_min.append(60/i) #conver to per min, instead of sec
+        
+        plt.plot(time_list, freq_min)
+        plt.ylabel('Event Measurement Rate (meas/min.)')
+        plt.xlabel('Time (s)')
+        plt.xlim(time_list[0], time_list[-1])
+        plt.title('Event Freqency- %s: %s' %(event_type, meas))
+        plt.show()
+    except:
+        print "Could not display graph. idk. pick another measurement to graph."
 #            
 # Poincare plots
 #
@@ -2489,17 +2519,25 @@ def psd_signal(version, key, Data, Settings, Results):
     results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
 
     results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
-                               FXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), dx =dx)
-    results_psd['VLF'] = scipy.integrate.simps(PXX[(ulf<FXX) & (FXX<=vlf)].tolist(),
-                               FXX[(ulf<FXX) & (FXX<=vlf)].tolist(), dx= dx)
-    results_psd['LF'] = scipy.integrate.simps(PXX[(vlf<FXX) & (FXX<=lf)].tolist(),
-                              FXX[(vlf<FXX) & (FXX<=lf)].tolist(), dx= dx)
-    results_psd['HF'] = scipy.integrate.simps(PXX[(lf<FXX) & (FXX<=hf)].tolist(),
-                              FXX[(lf<FXX) & (FXX<=hf)].tolist(), dx= dx)
+                               FXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
+                               dx =Settings['PSD-Signal']['dx'])
+    results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(),
+                               FXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(), 
+                               dx= Settings['PSD-Signal']['dx'])
+    results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(),
+                              FXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(), 
+                              dx= Settings['PSD-Signal']['dx'])
+    results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(),
+                              FXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(), 
+                              dx= Settings['PSD-Signal']['dx'])
     results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
     
     Results['PSD-Signal'][key] = results_psd
-    
+
+    Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
+    Settings['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal_Settings.csv'
+                                           %(Settings['Output Folder'], Settings['Label']))
     return Results
 
 def PSD_Peaks(Results, results_PSD, Settings_PSD):
