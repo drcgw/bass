@@ -742,13 +742,13 @@ def linear_settings(Settings):
         Settings['Linear Fit'] = False
         return Settings
     else:
-        Settings['Linear Fit'] = raw_input('Linear fit R value (0-1): ')
-        Settings['Linear Fit-Rolling R'] = raw_input('Rolling Window Linear fit R value (0-1): ')
-        Settings['Linear Fit-Rolling Window'] = raw_input('Rolling Window size (int): ')
-        Settings['Relative Baseline'] = raw_input('Relative Baseline (float): ')
+        Settings['Linear Fit'] = float(raw_input('Linear fit R value (0-1): '))
+        Settings['Linear Fit-Rolling R'] = float(raw_input('Rolling Window Linear fit R value (0-1): '))
+        Settings['Linear Fit-Rolling Window'] = int(raw_input('Rolling Window size (even integer): '))
+        Settings['Relative Baseline'] = float(raw_input('Relative Baseline (float): '))
         return Settings
     
-def linear_subtraction(data, R_raw, R_roll, window, b=0):
+def linear_subtraction(data, time_array, R_raw, R_roll, window, b=0):
     '''
     perfrom linear fit and then subtract that line from the input data. This will give the data a slope of 0.
     will check to see which fit (raw or rolling) gives a better fit.
@@ -765,7 +765,7 @@ def linear_subtraction(data, R_raw, R_roll, window, b=0):
     r, p = pearsonr(data, ((m*time) +c)) #Raw r val
     
     #rolling fit
-    rolling_mean, data_roll, time_roll = baseline_rolling(Data['original'].index, 
+    rolling_mean, data_roll, time_roll = baseline_rolling(time_array, 
                                                               np.array(data), 
                                                               window)
     time_r = arange(len(time_roll)) #arb time array, each val an int
@@ -815,9 +815,10 @@ def transform_wrapper(Data, Settings):
 def transformation(Data, Settings):
     
     data_trans = np.array(Data)
-    
+    time_array = Data.index
     if Settings['Linear Fit'] != False:
-        data_trans = linear_subtraction(data_trans,Settings['Linear Fit'], 
+        data_trans = linear_subtraction(data_trans, time_array,
+                                        Settings['Linear Fit'], 
                                         Settings['Linear Fit-Rolling R'],
                                         Settings['Linear Fit-Rolling Window'],
                                         Settings['Relative Baseline'])
@@ -855,7 +856,7 @@ def graph_trans(Data):
     try:
         
         plt.plot(Data['trans'].index, Data['trans'].ix[:,0], 'k')
-        plt.title(r'Transformed Data: %s' %(Data['trans'].column[0]))
+        plt.title(r'Transformed Data: %s' %(Data['trans'].ix[:,0].name))
         plt.xlabel('Time (s)')
         plt.ylabel('Relative Amplitude')
         
@@ -1063,7 +1064,7 @@ def graph_baseline(Data, Settings, Results):
             plt.hlines(0,Data['shift'].index[0],Data['shift'].index[-1],colors='b')
             #plt.xlim(xmin = min(time), xmax = (min(time)+10))
             #plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
-            plt.title(r'Linear Baseline: %s' %(Data['trans'].column[0]))
+            plt.title(r'Linear Baseline: %s' %(Data['trans'].ix[:,0].name))
 
             plt.show()
         except:
@@ -1075,7 +1076,7 @@ def graph_baseline(Data, Settings, Results):
             plt.xlabel('Time (s)')
             plt.ylabel('Amp')
             plt.plot(Results['Baseline-Rolling'].index, Results['Baseline-Rolling'].ix[:,0], 'b') #in this instance, baseline = rolling average
-            plt.title(r'Rolling Baseline: ' %(Data['trans'].column[0]))
+            plt.title(r'Rolling Baseline: ' %(Data['trans'].ix[:,0].name))
             #plt.xlim(xmin = min(time), xmax = (min(time)+10))
            # plt.ylim(ymin = min(data_baseline), ymax = max(data_baseline))
             
@@ -1409,8 +1410,12 @@ def event_peakdet_wrapper(Data, Settings, Results):
 #Event-Burst Detection
 #
 #
-def event_burstdet_settings(Settings):
-    
+def event_burstdet_settings(Data, Settings):
+    '''
+    WRITE DOCSTRING
+    '''
+
+    #Threshold
     if 'Threshold' in Settings.keys():
         print "Previous threshold value: %s" %Settings['Threshold']
     
@@ -1434,6 +1439,7 @@ def event_burstdet_settings(Settings):
         
         Settings['Threshold'] = threshperc
     
+    #inter-event min
     if 'Inter-event interval minimum (seconds)' in Settings.keys():
         print "Previous interval value: %s" %Settings['Inter-event interval minimum (seconds)']
         
@@ -1441,11 +1447,44 @@ def event_burstdet_settings(Settings):
     cluster_time = float(cluster_time)
     Settings['Inter-event interval minimum (seconds)'] = cluster_time
     
+    #burst duration min
+    if 'Minimum Burst Duration (s)' in Settings.keys():
+        print "Previous Minimum Burst Duration value: %s" %Settings['Minimum Burst Duration (s)']
     minimum_duration = raw_input("Enter the minimum burst duration in seconds:")
     minimum_duration = float(minimum_duration)
     Settings['Minimum Burst Duration (s)'] = minimum_duration
     
+    #burst duration max
+    if 'Maximum Burst Duration (s)' in Settings.keys():
+        print "Previous Maximum Burst Duration value: %s" %Settings['Maximum Burst Duration (s)']
+    max_duration = raw_input("Enter the maximum burst duration in seconds:")
+    max_duration = float(max_duration)
+    Settings['Maximum Burst Duration (s)'] = max_duration
+
+    #Minimum Peak Num
+    if 'Minimum Peak Number' in Settings.keys():
+        print "Previous Minimum Peaks per Burst number: %s" %Settings['Minimum Peak Number']
+    min_peak = raw_input("Enter the minimum number of peaks per burst:")
+    min_peak = int(min_peak)
+    Settings['Minimum Peak Number'] = min_peak
+
+    #Burst Area
+    if 'Burst Area' in Settings.keys():
+        print "Previous Burst Area setting: %s" %Settings['Burst Area']
+    b_area = raw_input("Do you want to calculate Burst Area? (True/False):")
+    b_area = bool(b_area)
+    Settings['Burst Area'] = b_area
+
+    #Exclude edges
+    if 'Exclude Edges' in Settings.keys():
+        print "Previous Exclude Edges setting: %s" %Settings['Exclude Edges']
+    ee = raw_input("Do you want to Exclude Edges? (True/False):")
+    ee = bool(ee)
+    Settings['Exclude Edges'] = ee
+
+
     return Settings
+
 def event_burstdet_wrapper(Data, Settings, Results):
     '''
     the wrapper that handles burst detection for a whole data frame. Bursts on the edges are not counted
@@ -2070,19 +2109,20 @@ def graph_detected_events_save(Data, Settings, Results, roi, lcpro = False):
     
     except:#this would be the case that no bursts were detected
         pass
-    
-    if Settings['Baseline Type'] == 'static':
-        plt.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
+    try:
+        if Settings['Baseline Type'] == 'static':
+            plt.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
 
-    elif Settings['Baseline Type'] == 'linear': 
-        plt.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
-                   Data['original'].index[-1], 'b', label = 'RAIN threshold')
-        plt.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
-        
-    elif Settings['Baseline Type'] == 'rolling':
-        plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-        plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
-
+        elif Settings['Baseline Type'] == 'linear': 
+            plt.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
+                       Data['original'].index[-1], 'b', label = 'RAIN threshold')
+            plt.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
+            
+        elif Settings['Baseline Type'] == 'rolling':
+            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+    except:
+        pass
     
     #LCPRO events
     if lcpro == True:
@@ -2177,17 +2217,20 @@ def graph_detected_events_display(Data, Settings, Results, roi, lcpro = False):
     except:#this would be the case that no bursts were detected
         pass
     
-    if Settings['Baseline Type'] == 'static':
-        plt.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
+    try:
+        if Settings['Baseline Type'] == 'static':
+            plt.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
 
-    elif Settings['Baseline Type'] == 'linear': 
-        plt.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
-                   Data['original'].index[-1], 'b', label = 'RAIN threshold')
-        plt.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
-        
-    elif Settings['Baseline Type'] == 'rolling':
-        plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-        plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+        elif Settings['Baseline Type'] == 'linear': 
+            plt.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
+                       Data['original'].index[-1], 'b', label = 'RAIN threshold')
+            plt.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
+            
+        elif Settings['Baseline Type'] == 'rolling':
+            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+    except:#baseline has not yet been set
+        pass
 
     
     #LCPRO events
@@ -2412,7 +2455,7 @@ def frequency_plot(event_type, meas, key, Data, Settings, Results):
         freq_list = measurement[key][meas].tolist()
         time_list = measurement[key].index.tolist()
 
-        if freq_list[-1] == NaN:
+        if freq_list[-1] != freq_list[-1]: #if NaN
             freq_list = freq_list[:-1]
             time_list = time_list[:-1]
         
@@ -2868,7 +2911,7 @@ def ap_entropy_wrapper(event_type, meas, Data, Settings, Results):
         for key, value in measurement.iteritems():
             
             temp_list = value[meas].tolist() #copy the correct array into a list
-            if temp_list[-1] == NaN:
+            if temp_list[-1] != temp_list[-1]: #check if NaN
                 temp_list = temp_list[:-1]
             try:
                 ap_ent = ap_entropy(temp_list, 2, (0.2*np.std(temp_list)))
@@ -2957,7 +3000,7 @@ def samp_entropy_wrapper(event_type, meas, Data, Settings, Results):
         for key, value in measurement.iteritems():
             
             temp_list = value[meas].tolist() #copy the correct array into a list
-            if temp_list[-1] == NaN:
+            if temp_list[-1] != temp_list[-1]:
                 temp_list = temp_list[:-1]
             try:
                 samp_ent = samp_entropy(temp_list, 2, (0.2*np.std(temp_list)))
