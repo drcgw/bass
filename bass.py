@@ -60,6 +60,8 @@ def load_wrapper(Data, Settings):
             Settings['plots folder'] = Settings['Output Folder'] +"\plots"
             mkdir_p(Settings['plots folder']) #makes a plots folder if does not exist
             print "Made plots folder"
+        except:
+            print "Could not make plots folder. :("
     #LCPro File extraction
     if Settings['File Type'] == 'LCPro':
 
