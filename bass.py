@@ -51,10 +51,15 @@ def load_wrapper(Data, Settings):
     #make output folder if it does not exist
     mkdir_p(Settings['Output Folder'])
 
-    Settings['plots folder'] = Settings['Output Folder'] +"/plots"
-    mkdir_p(Settings['plots folder']) #makes a plots folder if does not exist
-    print "Made plots folder"
-
+    try:
+        Settings['plots folder'] = Settings['Output Folder'] +"/plots"
+        mkdir_p(Settings['plots folder']) #makes a plots folder if does not exist
+        print "Made plots folder"
+    except:
+        try:
+            Settings['plots folder'] = Settings['Output Folder'] +"\plots"
+            mkdir_p(Settings['plots folder']) #makes a plots folder if does not exist
+            print "Made plots folder"
     #LCPro File extraction
     if Settings['File Type'] == 'LCPro':
 
@@ -113,8 +118,12 @@ def load_wrapper(Data, Settings):
 
     #Plain text, no headers, col[0] is time in seconds
     elif Settings['File Type'] == 'Plain':
-        data = pd.read_csv(r'%s/%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
-                           index_col= 0, header=None)
+        try:
+            data = pd.read_csv('%s/%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
+                               index_col= 0, header=None)
+        except:
+            data = pd.read_csv('%s\%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
+                               index_col= 0, header=None)
         data.index.name = 'Time(s)'
 
         new_cols = []
@@ -130,8 +139,12 @@ def load_wrapper(Data, Settings):
 
 
     elif Settings['File Type'] == 'Morgan':
-        data = pd.read_csv(r'%s/%s' %(Settings['folder'], Settings['Label']), sep = ',', 
-                           index_col= 0)
+        try:
+            data = pd.read_csv('%s/%s' %(Settings['folder'], Settings['Label']), sep = ',', 
+                               index_col= 0)
+        except:
+            data = pd.read_csv('%s\%s' %(Settings['folder'], Settings['Label']), sep = ',', 
+                               index_col= 0)
         data.index.name = 'Time(s)'
 
         #Old morgan data in milliseconds
