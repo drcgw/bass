@@ -1,23 +1,35 @@
 import numpy as np
+from numpy import NaN, Inf, arange, isscalar, asarray, array
+
+from math import log
+
 import scipy
 from scipy import signal, fft, arange
+from scipy.signal import butter, lfilter
+from scipy.stats.stats import pearsonr
+
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import matplotlib.mlab as mlab
+
 from pandas import Series, DataFrame
 import pandas as pd
-import sys
-import matplotlib.patches as patches
+from pandas.tools.plotting import autocorrelation_plot
+
 import time as t
+import datetime
 import sys
 import os, errno
-from numpy import NaN, Inf, arange, isscalar, asarray, array
+
 from matplotlib.widgets import *
-import datetime
+
 from matplotlib import cbook
-from scipy.signal import butter, lfilter
-from math import log
-from scipy.stats.stats import pearsonr
 from PIL import Image
-from pandas.tools.plotting import autocorrelation_plot
+
+
+
+
+
 #
 #Upload
 #Data and Settings. 
@@ -2551,7 +2563,11 @@ def poincare_plot(series):
     print SD1RR+' s'
     print SD2RR+' s'
 
-def poincare_batch()
+def poincare_batch():
+    '''
+
+    '''
+    #LOOP POINCARE RESULTS AND PLOT
     
 #
 #Power Spectral Density
@@ -2577,7 +2593,7 @@ def psd_signal(version, key, scale, Data, Settings, Results):
     Returns
     -------
     Results: dictionary
-        Updated to contains the following objects:
+        Updated to contains the following objects if bands are specified:
         Results['PSD-Signal']: a dictionary where each key is a dataframe with area in band data
         
     Notes
@@ -2614,9 +2630,9 @@ def psd_signal(version, key, scale, Data, Settings, Results):
 
     
     if 'PSD-Signal'not in Results.keys():
-        Results['PSD-Signal'] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
+        Results['PSD-Signal'] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
     
-    results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
+    results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
 
     try:
         FXX = Series(Fxx)
@@ -2634,6 +2650,7 @@ def psd_signal(version, key, scale, Data, Settings, Results):
                                   FXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(), 
                                   dx= Settings['PSD-Signal']['dx'])
         results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
+        results_psd['Scale'] = scale
         
         Results['PSD-Signal'][key] = results_psd
         Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv' %(Settings['Output Folder'], Settings['Label']))
@@ -2643,17 +2660,62 @@ def psd_signal(version, key, scale, Data, Settings, Results):
 
     return Results
 
-def psd_event(event_type, meas, key, Data, Settings, Results):
+def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     '''
-    get powerspectral density from one column's event measurement.
+    Wrapper that plots the power spectral density of one column's event measurement by calling scipy.signal.welch
+    The measurments must first be interpolated so that they can be handled like a regularly sampled descrete series.
+    User can choose the scale calling either 'raw' or 'db'.
+    the varibles inside this call are set to functions of the sampling rate of the time series. 
+    nperseg and nfft are 2*hertz, noverlap is hertz/2. scale defaults to raw.
     
-    example:
+    Parameters
+    ----------
+    Data: dictionary
+        must contain Data['original']
+    Settings: dictionary
+        dictionary that contains the user's settings. requires Settings['Sample Rate (s/frame)']
+    Results: dictionary
+        an dictionary named Results.
+    
+    Returns
+    -------
+    Results: dictionary
+        Updated to contains the following objects if bands are specified:
+        Results['PSD-Events']: a dictionary where each key is a dataframe with area in band data
+        
+    Notes
+    -----
+    raw plots in units of V**2/Hertz. db plots in units of dB/Hertz. the conversion is dB = 10*log10(raw)
+    hvaing varibles from the psd call as functions of the sampling rate of the signal is an appropreate way to handle the variblity of data collected.
+
+    changing the interpolation frequency to something appropreate for you species and measurement is critical! this can drastically change the 
+    Examples
+    --------
+    #These settings are for human heart rate
+
+    Settings['PSD-Event'] = Series(index = ['Hz','ULF', 'VLF', 'LF','HF','dx'])
+    #Set PSD ranges for power in band
+
+    Settings['PSD-Event']['hz'] = 4.0 #freqency that the interpolation and PSD are performed with.
+    Settings['PSD-Event']['ULF'] = 0.03 #max of the range of the ultra low freq band. range is 0:ulf
+    Settings['PSD-Event']['VLF'] = 0.05 #max of the range of the very low freq band. range is ulf:vlf
+    Settings['PSD-Event']['LF'] = 0.15 #max of the range of the low freq band. range is vlf:lf
+    Settings['PSD-Event']['HF'] = 0.4 #max of the range of the high freq band. range is lf:hf. hf can be no more than (hz/2)
+    Settings['PSD-Event']['dx'] = 10 #segmentation for the area under the curve. 
+
     event_type = 'Peaks'
     meas = 'Intervals'
     key = 'Mean1'
+    scale = 'raw'
     
-    #adopted form Rhenan Bartels Ferreira 
-    #https://github.com/RhenanBartels/biosignalprocessing/blob/master/psdRRi.py
+    Results = psd_event(event_type, meas, key, scale, Data, Settings, Results)
+    Results['PSD-Event'][key]
+
+    References
+    ----------
+    http://docs.scipy.org/doc/scipy-dev/reference/generated/scipy.signal.welch.html
+    interpolation adopted form Rhenan Bartels Ferreira 
+    https://github.com/RhenanBartels/biosignalprocessing/blob/master/psdRRi.py
     '''
     
     if event_type.lower() == 'peaks':
@@ -2687,48 +2749,58 @@ def psd_event(event_type, meas, key, Data, Settings, Results):
     #Number os estimations
     P = int((len(tx) - 256 / 128)) + 1 #AD doesn't know what this does, but i dare not touch a damn thing.
     
-    Fxx, Pxx = scipy.signal.welch(freq_x, fs = Settings['PSD-Event']['hz'], window="hanning", 
-                                  nperseg=256, noverlap=128, detrend="linear")
+    Fxx, Pxx = scipy.signal.welch(freq_x, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
     
+    if scale.lower() == 'db':
+        plt.plot(Fxx,10*np.log10(Pxx))
+        plt.ylabel('Power (dB/Hz)')
+        plt.title("Welch's PSD of %s in dB/Hz" %(key))
 
-    plt.plot(Fxx, Pxx)
-    plt.xlim(xmin = 0, xmax = Settings['PSD-Event']['hz']/2)
+    else:
+        plt.plot(Fxx, Pxx)
+        plt.ylabel(r"PSD $(s^2$/Hz)")
+        plt.title(r"Welch's PSD of %s in (s^2/Hz)" %(key))
+    
     plt.xlabel("Frequency (Hz)")
-    plt.ylabel(r"PSD $(ms^ 2$/Hz)")
-    plt.title("PSD-%s: %s-%s" %(key, event_type, meas))
     plt.show()
     
-    FXX = Series(Fxx)
-    PXX = Series(Pxx)
-    if 'PSD-Event'not in Results.keys():
-        Results['PSD-Event'] = {}
-    
-    if key not in Results['PSD-Event'].keys():
-        Results['PSD-Event'][key] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
-    
-    results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
 
-    results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
-                               FXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
-                               dx =Settings['PSD-Event']['dx'])
-    results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(),
-                               FXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(), 
-                               dx= Settings['PSD-Event']['dx'])
-    results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(),
-                              FXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(), 
-                              dx= Settings['PSD-Event']['dx'])
-    results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(),
-                              FXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(), 
-                              dx= Settings['PSD-Event']['dx'])
-    results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
     
-    Results['PSD-Event'][key][meas] = results_psd
-    
-    temp_psd_master = pd.concat(Results['PSD-Event'])
-    temp_psd_master.to_csv(r'%s/%s_PSD_Events.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
-    Settings['PSD-Event'].to_csv(r'%s/%s_PSD_Events_Settings.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
+    try:
+        FXX = Series(Fxx)
+        PXX = Series(Pxx)
+        if 'PSD-Event'not in Results.keys():
+            Results['PSD-Event'] = {}
+        
+        if key not in Results['PSD-Event'].keys():
+            Results['PSD-Event'][key] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
+        
+        results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
+
+        results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
+                                   FXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
+                                   dx =Settings['PSD-Event']['dx'])
+        results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(),
+                                   FXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(), 
+                                   dx= Settings['PSD-Event']['dx'])
+        results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(),
+                                  FXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(), 
+                                  dx= Settings['PSD-Event']['dx'])
+        results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(),
+                                  FXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(), 
+                                  dx= Settings['PSD-Event']['dx'])
+        results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
+        results_psd['Scale'] = scale
+        
+        Results['PSD-Event'][key][meas] = results_psd
+        
+        temp_psd_master = pd.concat(Results['PSD-Event'])
+        temp_psd_master.to_csv(r'%s/%s_PSD_Events.csv'
+                                               %(Settings['Output Folder'], Settings['Label']))
+        Settings['PSD-Event'].to_csv(r'%s/%s_PSD_Events_Settings.csv'
+                                               %(Settings['Output Folder'], Settings['Label']))
+    except:
+        print "Could not calculate power in band."
     return Results
 
 #
