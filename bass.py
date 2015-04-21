@@ -2551,56 +2551,96 @@ def poincare_plot(series):
     print SD1RR+' s'
     print SD2RR+' s'
 
+def poincare_batch()
     
 #
 #Power Spectral Density
 #
 #
 
-def psd_signal(version, key, Data, Settings, Results):
+def psd_signal(version, key, scale, Data, Settings, Results):
     '''
-    get powerspectral density from signal data
+    Wrapper that plots the power spectral density of a given time series by calling scipy.signal.welch
+    User can choose the scale calling either 'raw' or 'db'.
+    the varibles inside this call are set to functions of the sampling rate of the time series. 
+    nperseg and nfft are 2*hertz, noverlap is hertz/2. scale defaults to raw.
+    
+    Parameters
+    ----------
+    Data: dictionary
+        must contain Data['original']
+    Settings: dictionary
+        dictionary that contains the user's settings. requires Settings['Sample Rate (s/frame)']
+    Results: dictionary
+        an dictionary named Results.
+    
+    Returns
+    -------
+    Results: dictionary
+        Updated to contains the following objects:
+        Results['PSD-Signal']: a dictionary where each key is a dataframe with area in band data
+        
+    Notes
+    -----
+    raw plots in units of V**2/Hertz. db plots in units of dB/Hertz. the conversion is dB = 10*log10(raw)
+    hvaing varibles from the psd call as functions of the sampling rate of the signal is an appropreate way to handle the variblity of data collected.
+    Examples
+    --------
+    scale = 'raw' 
+    Results = psd_signal(version = 'original', key = 'Mean1', scale = scale, 
+                     Data, Settings, Results)
+
+    References
+    ----------
+    http://docs.scipy.org/doc/scipy-dev/reference/generated/scipy.signal.welch.html
     '''
     sig = Data[version][key].tolist()
     hertz = 2/Settings['Sample Rate (s/frame)']
-    Fxx, Pxx = scipy.signal.welch(sig, fs = hertz, window="hanning", 
-                                  nperseg=256, noverlap=128, detrend="linear")
+    Fxx, Pxx = scipy.signal.welch(sig, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
     
+    if scale.lower() == 'db':
+        plt.plot(Fxx,10*np.log10(Pxx))
+        plt.ylabel('Power (dB/Hz)')
+        plt.title("Welch's PSD of %s in dB/Hz" %(key))
 
-    plt.plot(Fxx, Pxx)
-    plt.xlim(xmin = 0, xmax = hertz/2)
+    else:
+        plt.plot(Fxx, Pxx)
+        plt.ylabel(r"PSD $(s^2$/Hz)")
+        plt.title(r"Welch's PSD of %s in (s^2/Hz)" %(key))
+    
     plt.xlabel("Frequency (Hz)")
-    plt.ylabel(r"PSD $(ms^ 2$/Hz)")
-    plt.title("PSD-%s: %s" %(version, key))
     plt.show()
     
-    FXX = Series(Fxx)
-    PXX = Series(Pxx)
+
+    
     if 'PSD-Signal'not in Results.keys():
         Results['PSD-Signal'] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
     
     results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
 
-    results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
-                               FXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
-                               dx =Settings['PSD-Signal']['dx'])
-    results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(),
-                               FXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(), 
-                               dx= Settings['PSD-Signal']['dx'])
-    results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(),
-                              FXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(), 
-                              dx= Settings['PSD-Signal']['dx'])
-    results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(),
-                              FXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(), 
-                              dx= Settings['PSD-Signal']['dx'])
-    results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
-    
-    Results['PSD-Signal'][key] = results_psd
+    try:
+        FXX = Series(Fxx)
+        PXX = Series(Pxx)
+        results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
+                                   FXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
+                                   dx =Settings['PSD-Signal']['dx'])
+        results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(),
+                                   FXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(), 
+                                   dx= Settings['PSD-Signal']['dx'])
+        results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(),
+                                  FXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(), 
+                                  dx= Settings['PSD-Signal']['dx'])
+        results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(),
+                                  FXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(), 
+                                  dx= Settings['PSD-Signal']['dx'])
+        results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
+        
+        Results['PSD-Signal'][key] = results_psd
+        Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv' %(Settings['Output Folder'], Settings['Label']))
+        Settings['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal_Settings.csv' %(Settings['Output Folder'], Settings['Label']))
+    except:
+        print "Could not calculate area in bands."
 
-    Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
-    Settings['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal_Settings.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
     return Results
 
 def psd_event(event_type, meas, key, Data, Settings, Results):
@@ -2691,116 +2731,6 @@ def psd_event(event_type, meas, key, Data, Settings, Results):
                                            %(Settings['Output Folder'], Settings['Label']))
     return Results
 
-def PSD_Peaks(Results, results_PSD, Settings_PSD):
-    Fxx_rii, Pxx_rii = PSD_rri(Results['Peaks'], hz)
-    results_PSD['Peakdet'] = Results_PSD(Fxx_rii, Pxx_rii)
-    plt.plot(Fxx_rii, Pxx_rii)
-    plt.xlim(xmin = 0, xmax = hz/2)
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel(r"PSD $(ms^ 2$/Hz)")
-    plt.title("PSD-Peaks")
-    plt.show()
-
-def PSD_bursts(Results, results_PSD, Settings_PSD):
-    Fxx_tct, Pxx_tct = PSD_tct(Results['Bursts'], hz)
-    results_PSD['Burstdet'] = Results_PSD(Fxx_tct, Pxx_tct)
-    plt.plot(Fxx_tct, Pxx_tct)
-    plt.xlim(xmin = 0, xmax = hz/2)
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel(r"PSD $(ms^ 2$/Hz)")
-    plt.title("PSD-Bursts")
-    plt.show()
-    
-def PSD_rri(results_peaks, hz):
-    '''
-    Power spectral density plot of rr intervals. this argument takes the results_peaks dataframe
-    '''
-    #adopted form Rhenan Bartels Ferreira 
-    #https://github.com/RhenanBartels/biosignalprocessing/blob/master/psdRRi.py
-
-    from numpy import arange, cumsum, logical_and
-    from scipy.signal import welch
-    from scipy.interpolate import splrep, splev
-
-    rri = Results['Peaks']['Intervals'].tolist()
-    del rri[-1] #the last value is NaN, so we delete it.
-    rri_new = []
-    for i in rri:
-        bpm = 60/i
-        rri_new.append(bpm)
-    rri = rri_new
-    
-    t = Results['Peaks'].index.tolist()
-    del t[-1] #must be the same length as rri
-    
-    #Evenly spaced time array using hz
-    tx = arange(t[0], t[-1], 1.0 / hz)
-
-    #Interpolate RRi serie
-    tck = splrep(t, rri, s = 0)
-    rrix = splev(tx, tck, der=0)
-
-    #Number os estimations
-    P = int((len(tx) - 256 / 128)) + 1 #AD doesn't know what this does, but i dare not touch a damn thing.
-
-    #PSD with Welch's Method
-    Fxx, Pxx = welch(rrix, fs=hz, window="hanning", nperseg=256, noverlap=128, detrend="linear")
-
-    return Fxx, Pxx
-
-def PSD_tct(results_bursts, hz):
-    '''
-    Power spectral density plot of total cycle time. this argument takes the results_burst dataframe
-    '''
-    #adopted form Rhenan Bartels Ferreira 
-    #https://github.com/RhenanBartels/biosignalprocessing/blob/master/psdRRi.py
-
-    from numpy import arange, cumsum, logical_and
-    from scipy.signal import welch
-    from scipy.interpolate import splrep, splev
-
-    tct = Results['Bursts']['Total Cycle Time'].tolist()
-    del tct[-1] #the last value is NaN, so we delete it.
-    tct_new = []
-    for i in tct:
-        bpm = 60/i
-        tct_new.append(bpm)
-    tct = tct_new
-    
-    t = Results['Bursts']['Burst Start'].tolist()
-    del t[-1] #must be the same length as rri
-    
-    #Evenly spaced time array using hz
-    tx = arange(t[0], t[-1], 1.0 / hz)
-
-    #Interpolate RRi serie
-    tck = splrep(t, tct, s = 0)
-    tctx = splev(tx, tck, der=0)
-
-    #Number os estimations
-    P = int((len(tx) - 256 / 128)) + 1 #AD doesn't know what this does, but i dare not touch a damn thing.
-
-    #PSD with Welch's Method
-    Fxx, Pxx = welch(tctx, fs=hz, window="hanning", nperseg=256, noverlap=128, detrend="linear")
-
-    return Fxx, Pxx
-
-def Results_PSD(Fxx, Pxx):
-    '''
-    Generates the result for peakdet interval PSD (PSD_rri)
-    '''
-    from scipy.integrate import simps
-
-    results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF'])
-    FXX = Series(Fxx)
-    PXX = Series(Pxx)
-
-    results_psd['ULF'] = simps(PXX[FXX<ulf].tolist(), FXX[FXX<ulf].tolist(), dx =dx)
-    results_psd['VLF'] = simps(PXX[(ulf<FXX) & (FXX<=vlf)].tolist(),FXX[(ulf<FXX) & (FXX<=vlf)].tolist(), dx= dx)
-    results_psd['LF'] = simps(PXX[(vlf<FXX) & (FXX<=lf)].tolist(),FXX[(vlf<FXX) & (FXX<=lf)].tolist(), dx= dx)
-    results_psd['HF'] = simps(PXX[(lf<FXX) & (FXX<=hf)].tolist(),FXX[(lf<FXX) & (FXX<=hf)].tolist(), dx= dx)
-    results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
-    return results_psd
 #
 #Entropy
 #
