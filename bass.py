@@ -2506,7 +2506,7 @@ class DataCursor(object):
             annotation.set_visible(True)
             event.canvas.draw()
 
-def raster(Results):
+def raster(Data, Results):
     """
     Generates the raster plot from the spikes generated in a dataframe
     Parameters
@@ -2521,13 +2521,11 @@ def raster(Results):
     Displays the raster plot of the whole time series. 
     Keys that are stings are converted into order number. 
     """
-    n=0
     for key, value in Results['Peaks'].iteritems():
         try:
             key = float(key)
         except:
-            legend = key
-            key = n
+            key = Data['original'].columns.get_loc(key)
             
         temp_y = []
         for n in np.arange(len(value)):
@@ -2536,10 +2534,7 @@ def raster(Results):
         n+=1
     plt.xlabel('Time (s)')
     plt.ylabel('Groups')
-    #plt.ylim(ymin = 2.5)
-    #plt.xlim(xmin = 30000, xmax = 45000)
     plt.title('Raster plot')
-    #plt.legend()
     plt.show()
     
 #
