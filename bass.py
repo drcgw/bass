@@ -2737,7 +2737,7 @@ def psd_signal(version, key, scale, Data, Settings, Results):
     http://docs.scipy.org/doc/scipy-dev/reference/generated/scipy.signal.welch.html
     '''
     sig = Data[version][key].tolist()
-    hertz = 1/Settings['Sample Rate (s/frame)']
+    hertz = int(1/Settings['Sample Rate (s/frame)']) #must be int to protect welch
     Fxx, Pxx = scipy.signal.welch(sig, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
     
     if scale.lower() == 'db':
@@ -2875,7 +2875,7 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     #Number os estimations
     P = int((len(tx) - 256 / 128)) + 1 #AD doesn't know what this does, but i dare not touch a damn thing.
     
-    hertz = 1/Settings['PSD-Event']['hz']
+    hertz = int(1/Settings['PSD-Event']['hz'])
 
 
     Fxx, Pxx = scipy.signal.welch(freq_x, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
