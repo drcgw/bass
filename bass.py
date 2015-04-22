@@ -2434,7 +2434,7 @@ def average_measurement_plot(event_type, meas, Results):
         plt.ylabel('%s' %(meas))
         plt.title('Average %s %s with standard deviation' %(event_type,meas))
         plt.show()
-    except ValueError: #this occurs when the column names are strings that cannot be converted into floats
+    except: #this occurs when the column names are strings that cannot be converted into floats
         temp = np.arange(len(measurement.mean().index))
         plt.errorbar(temp, measurement.mean(), measurement.std(), marker = '^') #use 'order' number instead
         plt.xlabel('Groups (by order number)')
