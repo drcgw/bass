@@ -594,23 +594,19 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
     """
-    Description
+    Wrapper that put sorts parameters into the butterworth band pass function.
     Parameters
     ----------
-    param1 : type, shape (N,) optional
-        description.
-    param2 : type, shape (N,) optional
-        description.
+    lowcut : float
+        lowerbond, Hz.
+    highcut : float
+        upperbound, Hz.
     Returns
     -------
-    value : type, shape (N) optional
-        description.
-    Notes
-    -----
-    more note about usage and philosophy. 
-    Examples
-    --------
-    ?
+    a: type
+        varible for lfilter
+    b: type
+        varible for lfilter
     References
     ----------
     .. [1] http://wiki.scipy.org/Cookbook/ButterworthBandpass
@@ -710,6 +706,24 @@ def user_input_trans(Settings):
     return Settings
 
 def savgolay_settings():
+    '''
+    Uses raw_input to get settings from user for savitzky_golay
+    Parameters
+    ----------
+    None
+    Returns
+    -------
+    window: int
+        size of the window for the Savitzky-Golay filter
+    poly: int
+        the polynomial to be used for the Savitzky-Golay
+    Notes
+    -----
+    Forces values to be integers. Does not have smart handling for unexpected inputs. handles text in a non-case sensitive way. Will take none or false to turn off Savitzky-Golay.
+    Examples
+    --------
+    savgolay_settings()
+    '''
     print "Enter the Savitzky Golay filter settings seperated by a comma. Window size must be odd."
     
     temp_list = raw_input("Savitzky Golay Settings (window, polynomial): ").lower()
@@ -735,6 +749,26 @@ def savgolay_settings():
     '''
     
 def bandpass_settings():
+    '''
+    Uses raw_input to get settings from user for butter_bandpass_filter()
+    Parameters
+    ----------
+    None
+    Returns
+    -------
+    lowcut: float
+        lowerbound for bandpass, Hz
+    highcut: float
+        lowerbound for bandpass, Hz
+    poly: int
+        the polynomial to be used for the butter_bandpass_filter
+    Notes
+    -----
+    Forces values to be floats or integers. Does not have smart handling for unexpected inputs. handles text in a non-case sensitive way. Will take none or false to turn off butter_bandpass_filter.
+    Examples
+    --------
+
+    '''
     print "Enter the butterworth bandpass settings seperated by a comma. cuts are in hertz and poly should be an interger."
     
     temp_list = raw_input("Bandpass Settings (lowcut, highcut,polynomial): ").lower()
@@ -752,6 +786,26 @@ def bandpass_settings():
     return lowcut, highcut, poly
 
 def abs_settings():
+        '''
+    Uses raw_input to get settings from user for absolute value.
+    Parameters
+    ----------
+    None
+    Returns
+    -------
+    abs_set: bool
+        lowerbound for bandpass, Hz
+    highcut: float
+        lowerbound for bandpass, Hz
+    poly: int
+        the polynomial to be used for the butter_bandpass_filter
+    Notes
+    -----
+    will only set to true if True (case insensitive) is inputed. otherwise, defaults to False
+    Examples
+    --------
+
+    '''
     print "Enter True or False to turn on or off the absolute value."
     abs_set = raw_input("Absolute Value (True/False): ").lower()
     
@@ -762,6 +816,20 @@ def abs_settings():
     return abs_set
 
 def linear_settings(Settings):
+    '''
+    Uses raw_input to get user settings for linear subtraction.
+
+    Parameters
+    ----------
+    Settings: dict
+    Returns
+    -------
+    Settings: dict
+        will update Linear Fit to False or Float value for R. if using, will also update rolling R, Rolling R window, and relative baselien.
+    Notes
+    -----
+    See linear_subtraction for more details. about what each of these parameters does.
+    '''
     print "Enter True or False to turn on or off the linear fit."
     lin_param = raw_input("Linear Fit (True/False): ").lower()
     
@@ -777,8 +845,39 @@ def linear_settings(Settings):
     
 def linear_subtraction(data, time_array, R_raw, R_roll, window, b=0):
     '''
-    perfrom linear fit and then subtract that line from the input data. This will give the data a slope of 0.
-    will check to see which fit (raw or rolling) gives a better fit.
+    Finds two best fit lines for a given data array and then will subtract the line from the data array if the pearson coefficient is greater than the given threshold.
+    Parameters
+    ----------
+    data: 1d array
+        contains the y values
+    time_array: 1d array
+        contains time in seconds
+    R_raw: float
+        pearson coefficient value, between 0-1
+    R_roll: float
+        pearson coefficient value, between 0-1
+    window: int
+        window size to use on the rolling average for the rolling best fit line.
+    b: float
+        relative baseline, to ensure that the fitted data is at the correct amplitude
+
+    Returns
+    -------
+    ls_tf: 1d array
+        subtracted, fitted data array
+    or   
+    data: 1d array
+        original array
+
+    Notes
+    -----
+    there are two linear fits that this function makes. The first is just a regular fit of the raw data array. the second is a fit of the rolling mean of the original array (this array is one window size shorter. see baseline_rolling for more information about this function). In order to actually subtract/detrend, the pearson correlation value must be greater than or equal to the one specified (R_raw or R_roll). If the raw fit is better or equal to rolling, raw is used.
+
+    rolling is handy when you want to detrend, but not take events into account when makign the line. 
+
+    Examples
+    --------
+    SOON
     '''
     #raw fit
     time = arange(len(data)) #arb time array, each val an int
@@ -1050,6 +1149,14 @@ def baseline_rolling(time, data_trans, window):
     '''
     calculates the rolling baseline of a 1d numpy array based on a given window size. 
     To align the rolling baseline along the center, the original data is trimmed, 1/2 baseline from each end.
+    Parameters
+    ----------
+    time: list
+        original time array, floats (seconds)
+    data_trans: list
+        floats.
+    window:
+        window size for the moving average.
     '''
     
     rolling_mean = pd.rolling_mean(data_trans, window)
@@ -2464,12 +2571,13 @@ def frequency_plot(event_type, meas, key, Data, Settings, Results):
     NONE
     Notes
     -----
-    
+    changes units from seconds event type/minute
     Examples
     --------
-
-    References
-    ----------
+    event_type = 'Peaks'
+    meas = 'Intervals'
+    key = 'Mean1' #'Mean1' default for single wave
+    frequency_plot(event_type, meas, key, Data, Settings, Results)
 
     """
     
