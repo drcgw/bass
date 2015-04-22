@@ -2570,9 +2570,32 @@ def poincare_batch():
     #LOOP POINCARE RESULTS AND PLOT
     
 #
-#Power Spectral Density
+#Signal Theory
 #
 #
+def spectogram(version, key, Data, Settings, Results):
+    '''
+    plot the spectrogram of the time series. Only displays active frequencies. 
+    '''
+
+    spec, freq, bins = mlab.specgram(Data[version][key].tolist(), 
+                              Fs= int(1/Settings['Sample Rate (s/frame)']), 
+                              NFFT= int(2/Settings['Sample Rate (s/frame)']), 
+                              noverlap= int(Settings['Sample Rate (s/frame)']))
+    
+    plt.pcolor(bins, freq, spec)
+    plt.colorbar()
+    plt.xlabel('Bin (1 seconds)')
+    plt.ylabel('Frequency')
+    plt.xlim(xmin= bins[0], xmax = bins[-1])
+    
+    df_spec = DataFrame(data = spec, index = freq, columns= bins)
+    df_spec_sel = df_spec[df_spec>0.0000001] #return only values that are greater than this
+    df_count = df_spec[df_spec_sel.count(1)>0] #get the counts of how many bins are not NaN values, then slice original df so that only frequencies with activity are left
+    plt.ylim(ymin = df_count.index[0], ymax = df_count.index[-1]) #set limits so scale only includes active freqs
+    
+    plt.title('%s Spectrogram' %(key))
+    plt.show()
 
 def psd_signal(version, key, scale, Data, Settings, Results):
     '''
@@ -2611,7 +2634,7 @@ def psd_signal(version, key, scale, Data, Settings, Results):
     http://docs.scipy.org/doc/scipy-dev/reference/generated/scipy.signal.welch.html
     '''
     sig = Data[version][key].tolist()
-    hertz = 2/Settings['Sample Rate (s/frame)']
+    hertz = 1/Settings['Sample Rate (s/frame)']
     Fxx, Pxx = scipy.signal.welch(sig, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
     
     if scale.lower() == 'db':
@@ -2749,6 +2772,8 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     #Number os estimations
     P = int((len(tx) - 256 / 128)) + 1 #AD doesn't know what this does, but i dare not touch a damn thing.
     
+    hertz = 1/Settings['Sample Rate (s/frame)']
+
     Fxx, Pxx = scipy.signal.welch(freq_x, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
     
     if scale.lower() == 'db':
