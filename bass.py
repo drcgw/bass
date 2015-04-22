@@ -786,7 +786,7 @@ def bandpass_settings():
     return lowcut, highcut, poly
 
 def abs_settings():
-        '''
+    '''
     Uses raw_input to get settings from user for absolute value.
     Parameters
     ----------
