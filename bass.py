@@ -1897,7 +1897,7 @@ def burstarea(data, time, burst_start, burst_end, dx = 10):
 #
 def Save_Results(Data, Settings, Results):
     '''
-    Save function for all files out of SWAN. All files must be present, otherwise it will not save. all files in the same folder with the same name will be saved over, except for the Settings file, which always has a unique name.
+    Save function for all files out of BASS. All files must be present, otherwise it will not save. all files in the same folder with the same name will be saved over, except for the Settings file, which always has a unique name.
     '''
         #Save master files 
     Results['Peaks-Master'].to_csv(r'%s/%s_Peak_Results.csv'
@@ -2772,7 +2772,8 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     #Number os estimations
     P = int((len(tx) - 256 / 128)) + 1 #AD doesn't know what this does, but i dare not touch a damn thing.
     
-    hertz = 1/Settings['Sample Rate (s/frame)']
+    hertz = 1/Settings['PSD-Event']['hz']
+
 
     Fxx, Pxx = scipy.signal.welch(freq_x, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
     
