@@ -2847,7 +2847,7 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     The measurments must first be interpolated so that they can be handled like a regularly sampled descrete series.
     User can choose the scale calling either 'raw' or 'db'.
     the varibles inside this call are set to functions of the sampling rate of the time series. 
-    nperseg and nfft are 2*hertz, noverlap is hertz/2. scale defaults to raw.
+    nperseg and nfft are 256, noverlap is 128. scale defaults to raw.
     
     Parameters
     ----------
@@ -2933,7 +2933,7 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     hertz = int(Settings['PSD-Event']['hz'])
 
 
-    Fxx, Pxx = scipy.signal.welch(freq_x, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
+    Fxx, Pxx = scipy.signal.welch(freq_x, fs = hertz, window="hanning", nperseg=256, noverlap=128, nfft=256, detrend='linear', return_onesided=True, scaling='density')
     
     if scale.lower() == 'db':
         plt.plot(Fxx,10*np.log10(Pxx))
