@@ -1,13 +1,12 @@
-ECG-Python and GHRV protocol
+Single Wave-Interactive protocol
 
 Dependencies:
-Enthought’s distribution of Python (canopy): https://store.enthought.com/
+Enthought’s distribution of Python (Canopy): https://store.enthought.com/
 
 Optional components (recommended for full feature set):
 pyEEG: http://pyeeg.sourceforge.net/
-gHRV: http://milegroup.github.io/ghrv/index.html
 
-Follow the steps in order to analyze your data. Check out [Requirements](https://github.com/aedobyns/SWAN/wiki/Requirements) to make sure your system can run this notebook.
+Follow the steps in order to analyze your data. Check out [Requirements](https://github.com/drcgw/bass/wiki/Requirements) to make sure your system can run this notebook.
 
 #Open ipython notebook: 
 
@@ -19,11 +18,14 @@ Follow the steps in order to analyze your data. Check out [Requirements](https:/
 
 4. Do not launch from Canopy! 
 
-5. Navigate through your folder tree to where you have saved the `SWAN.ipynb` file. Click on it to open it.
+5. Navigate through your folder tree to where you have saved the `Single Wave-Interactive.ipynb` file. Click on it to open it.
 
-#Welcome to SWAN
+#Welcome to BASS
 
-To run code blocks, click on the block then press the play button at the top of the page OR hit `Shift + Enter`. You will not have to type directly in the code boxes. Instead, you will be prompted to type in boxes that appear after you run a block.
+To run code blocks, click on the block then press the play button at the top of the page OR hit `Shift + Enter`. More often than not, you will not have to type directly in the code boxes. Instead, you will be prompted to type in boxes that appear after you run a block. If you do need to type into code boxes, it will be to change variable strings, which look like:
+	`key = ‘Mean1’`
+	`meas = 'Intervals'`
+change *ONLY* the word(s) on the right of the equal sign. These **MUST** have quotes around them, or the code will not run. 
 Blocks of code are identified here by the header above them. There are also helpful boxes that contain instructions imbedded in the notebook.
 
 
@@ -31,18 +33,36 @@ Blocks of code are identified here by the header above them. There are also help
 	
 1. Run this block of code. It only needs to be run once at the beginning of each session.
 
+2. If the initialization worked, `BASS ready!` will print below this box.
+
+3. Sometimes on windows, it will throw an error about openpyxl not being compatible. This is not an issue that will affect this notebook. Carry on. 
+
 # Begin User Input
 ##Load
 
-1. Run this block of code. You will be prompted to enter the loading information.
+1. Run this block of code. You will be prompted to enter the loading information. This block is required.
 
-2. Enter the full file path for the location of the data. This should start with a `/` and end with `.txt`. This text file should be tab delimitated. 
+2. Designate the path to your file to load. This does not include the file itself.
+	
+	Mac OSX Example: '/Users/MYNAME/Documents/bass'
+	Microsoft Example: 'C:\\Users\MYNAME\Documents\bass'
 
-3. Enter the full file path for the root folder of where all of your files will be saved. This should start with a `/`, but NOT end with one.
+3. Enter the name of the file, including the file type. This file should be a tab delimited text file with no header. Time must be the first column and in seconds.
+	
+	Example: ‘rat34_ECG.txt’
 
-4. Enter the Sample Name. This will be used to create a new folder (if one does not exist) where all of the outputs will be saved. All output files will also contain this handle as part of their file name.
+4. Designate the location of the folder where you would like the folder containing your results to go. If the folder does not exist, then it will be created. A plots folder, called 'plots' will be created inside this folder for you if it does not already exist.
 
-5. When the data is loaded, the notebook will print `Sample SAMPLE_NAME is ###.## seconds long`
+	Mac OSX Example: '/Users/MYNAME/Documents/output'
+	Microsoft Example: 'C:\\Users\MYNAME\Documents\output'
+
+5. When the data is loaded, the notebook will print 
+	`Made plots folder
+	Data Loaded`
+
+6. **Tips**: You can right-click on a file and select properties to get the full file path, then copy and paste it into these prompts. 
+
+7. **Troubleshooting**: You are sure that the file path you gave is correct, but it throws and error saying that the file doesn’t exist. Make sure that you included the file type in the file name and that it doesn’t accidentally have the extension twice (‘rat34_ECG.txt.txt’). You should also make sure that your slashes are going the correct way for your operating system.
 
 ##Graph Data
 
@@ -50,21 +70,56 @@ Blocks of code are identified here by the header above them. There are also help
 
 2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html 
 
+#Power Spectral Density
+
+1. Optional code block: Set frequency bands to calculate the area under the curve, with output of raw power.
+
+2. In the next block, type `‘raw’` or `‘dB’` to change the scale of the PSD graph to raw Power or decibels/Hz. Run the block.
+
+3. The PSD graph will launch. 2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html
+
+4. If power in bands was set, then the power in bands will print when the graph is closed. this table will be automatically saved out as a .csv. 
+
+5. Use this information to determine the low cut and high cut for you band-pass filter, if you need it.
+
+##Spectrogram
+
+1. Run this block to launch the spectrogram of the raw data. This block can take some time to run, so be patient with it. The y-axis autoscales so that only ‘active’ frequencies greater than 0.0000001 are displayed. the color bar is autoscaled to the minimum and maximum of the given spectrum.
+
+2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html
+
+3. Use this information to determine the low cut and high cut for you band-pass filter, if you need it.
+
 #Transform Data
 
 ##Load settings from a file
 
-1. Run this block of code if you want to load a previously outputted SWAN settings file. The name can be changed.
+0. if you want to load a previously outputted BASS settings file, use this block. The name can be changed.
+
+1. Run this block of code, you will be prompted to enter the full file path and file name. Expected format is '.csv’, but the file name can be changed to anything.
+
+	Mac OSX Example: '/Users/MYNAME/Documents/bass_settings.csv'
+	Microsoft Example: 'C:\\Users\MYNAME\Documents\bass_settings.csv'
 
 2. The settings will be displayed in the table below. You do not need to use any of the `Set Settings` blocks if you do not need to change a parameter. 
 
 ##Enter your settings for data transformation
 
-0. If you loaded settings from a file, you can skip this step.
+0. If you loaded settings from a file, you can skip this step. HOWEVER, you must do one or the other. there are no defaults.
 
 1. Run this block of code. You will be prompted to Enter values for different transformation and filtering settings. Choose which of these is right for your dataset. 
 
-2. Linear Fit. Enter `True` or `False` to use this function.
+##Linear Fit
+
+Linear fit is used to detrend linear data. It does this by generating a best fit line, then subtracting it from the data. 
+
+`Linear Fit (True/False):` Enter `False` to not use this function. Enter `True` to use this function.
+
+`Linear Fit R value (0-1):` Enter a number between 0 and 1. A linear fit using the raw data is generated by the function. Using this line for subtraction will only happen if the r value is greater than this.
+
+`Rolling Window Linear fit R value (0-1):` Enter a number between 0 and 1. A linear fit using the the rolling average of the original data is generated by the function. Using this line for subtraction will only happen if the r value is greater than this.
+
+`Rolling Window size (even integer):` Enter an even integer. This is the size (n) of the window used to create the rolling/moving average of the data
 
 	a. If you data has a gradual, linear slope, use this to flatten your data. Ex) photobleaching from fluorescence microscopy.
 	
