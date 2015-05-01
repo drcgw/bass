@@ -2752,8 +2752,18 @@ def psd_signal(version, key, scale, Data, Settings, Results):
     -----
     raw plots in units of V**2/Hertz. db plots in units of dB/Hertz. the conversion is dB = 10*log10(raw)
     hvaing varibles from the psd call as functions of the sampling rate of the signal is an appropreate way to handle the variblity of data collected.
+    Power in band units are teh same as the graph, recorded in the Scale setting. 
     Examples
     --------
+    Settings['PSD-Signal'] = Series(index = ['ULF', 'VLF', 'LF','HF','dx'])
+    #Set PSD ranges for power in band
+
+    Settings['PSD-Signal']['ULF'] = 25 #max of the range of the ultra low freq band. range is 0:ulf
+    Settings['PSD-Signal']['VLF'] = 75 #max of the range of the very low freq band. range is ulf:vlf
+    Settings['PSD-Signal']['LF'] = 150 #max of the range of the low freq band. range is vlf:lf
+    Settings['PSD-Signal']['HF'] = 300 #max of the range of the high freq band. range is lf:hf. hf can be no more than (hz/2)
+    Settings['PSD-Signal']['dx'] = 2 #segmentation for the area under the curve. 
+
     scale = 'raw' 
     Results = psd_signal(version = 'original', key = 'Mean1', scale = scale, 
                      Data, Settings, Results)
@@ -2787,23 +2797,32 @@ def psd_signal(version, key, scale, Data, Settings, Results):
     results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
 
     try:
-        FXX = Series(Fxx)
-        PXX = Series(Pxx)
-        results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
-                                   FXX[FXX<Settings['PSD-Signal']['ULF']].tolist(), 
-                                   dx =Settings['PSD-Signal']['dx'])
-        results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(),
-                                   FXX[(Settings['PSD-Signal']['ULF']<FXX) & (FXX<=Settings['PSD-Signal']['VLF'])].tolist(), 
-                                   dx= Settings['PSD-Signal']['dx'])
-        results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(),
-                                  FXX[(Settings['PSD-Signal']['VLF']<FXX) & (FXX<=Settings['PSD-Signal']['LF'])].tolist(), 
-                                  dx= Settings['PSD-Signal']['dx'])
-        results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(),
-                                  FXX[(Settings['PSD-Signal']['LF']<FXX) & (FXX<=Settings['PSD-Signal']['HF'])].tolist(), 
-                                  dx= Settings['PSD-Signal']['dx'])
+        df_power = DataFrame( index = Fxx, data = Pxx)
+        df_power.columns = ['Power']
+
+        #ULF
+        df_ulf = df_power[df_power.index<Settings['PSD-Signal']['ULF']]
+        results_psd['ULF'] = scipy.integrate.simps(df_ulf['Power'], df_ulf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #VLF
+        df_vlf = df_power[(df_power.index>Settings['PSD-Signal']['ULF']) & (df_power.index<=Settings['PSD-Signal']['VLF'])]
+        results_psd['VLF'] = scipy.integrate.simps(df_vlf['Power'], df_vlf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #LF
+        df_lf = df_power[(df_power.index>Settings['PSD-Signal']['VLF']) & (df_power.index<=Settings['PSD-Signal']['LF'])]
+        results_psd['LF'] = scipy.integrate.simps(df_lf['Power'], df_lf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #HF
+        df_hf = df_power[(df_power.index>Settings['PSD-Signal']['LF']) & (df_power.index<=Settings['PSD-Signal']['HF'])]
+        results_psd['HF'] = scipy.integrate.simps(df_hf['Power'], df_hf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #LF/HF
         results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
         results_psd['Scale'] = scale
         
+        if scale.lower() == 'db':
+            results_psd = 10*np.log10(results_psd)
+
         Results['PSD-Signal'][key] = results_psd
         Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv' %(Settings['Output Folder'], Settings['Label']))
         Settings['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal_Settings.csv' %(Settings['Output Folder'], Settings['Label']))
@@ -2922,30 +2941,37 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
 
     
     try:
-        FXX = Series(Fxx)
-        PXX = Series(Pxx)
         if 'PSD-Event'not in Results.keys():
             Results['PSD-Event'] = {}
         
         if key not in Results['PSD-Event'].keys():
             Results['PSD-Event'][key] = DataFrame(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
         
-        results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
+        df_power = DataFrame( index = Fxx, data = Pxx)
+        df_power.columns = ['Power']
 
-        results_psd['ULF'] = scipy.integrate.simps(PXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
-                                   FXX[FXX<Settings['PSD-Event']['ULF']].tolist(), 
-                                   dx =Settings['PSD-Event']['dx'])
-        results_psd['VLF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(),
-                                   FXX[(Settings['PSD-Event']['ULF']<FXX) & (FXX<=Settings['PSD-Event']['VLF'])].tolist(), 
-                                   dx= Settings['PSD-Event']['dx'])
-        results_psd['LF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(),
-                                  FXX[(Settings['PSD-Event']['VLF']<FXX) & (FXX<=Settings['PSD-Event']['LF'])].tolist(), 
-                                  dx= Settings['PSD-Event']['dx'])
-        results_psd['HF'] = scipy.integrate.simps(PXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(),
-                                  FXX[(Settings['PSD-Event']['LF']<FXX) & (FXX<=Settings['PSD-Event']['HF'])].tolist(), 
-                                  dx= Settings['PSD-Event']['dx'])
+        #ULF
+        df_ulf = df_power[df_power.index<Settings['PSD-Signal']['ULF']]
+        results_psd['ULF'] = scipy.integrate.simps(df_ulf['Power'], df_ulf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #VLF
+        df_vlf = df_power[(df_power.index>Settings['PSD-Signal']['ULF']) & (df_power.index<=Settings['PSD-Signal']['VLF'])]
+        results_psd['VLF'] = scipy.integrate.simps(df_vlf['Power'], df_vlf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #LF
+        df_lf = df_power[(df_power.index>Settings['PSD-Signal']['VLF']) & (df_power.index<=Settings['PSD-Signal']['LF'])]
+        results_psd['LF'] = scipy.integrate.simps(df_lf['Power'], df_lf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #HF
+        df_hf = df_power[(df_power.index>Settings['PSD-Signal']['LF']) & (df_power.index<=Settings['PSD-Signal']['HF'])]
+        results_psd['HF'] = scipy.integrate.simps(df_hf['Power'], df_hf.index, dx =Settings['PSD-Signal']['dx'])
+
+        #LF/HF
         results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
         results_psd['Scale'] = scale
+        
+        if scale.lower() == 'db':
+            results_psd = 10*np.log10(results_psd)
         
         Results['PSD-Event'][key][meas] = results_psd
         
