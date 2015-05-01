@@ -2214,239 +2214,210 @@ def results_timeseries_plot(roi, start, end, Data, Settings, Results):
     
     except:#this would be the case that no bursts were detected
         pass
-    try:
+    
+    try: #plot baseline
         if Settings['Baseline Type'] == 'static':
-            f2.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
+            pass
 
         elif Settings['Baseline Type'] == 'linear': 
-            f2.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
-                       Data['original'].index[-1], 'b', label = 'RAIN threshold')
             f2.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
 
         elif Settings['Baseline Type'] == 'rolling':
             f2.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+    except:
+        pass
+
+    try: #plot threshold
+        if Settings['Baseline Type'] == 'static':
+            f2.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'Threshold')
+
+        elif Settings['Baseline Type'] == 'linear': 
+            f2.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
+                       Data['original'].index[-1], 'b', label = 'Threshold')
+
+        elif Settings['Baseline Type'] == 'rolling':
             f2.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
     except:
         pass
     
     plt.show()
 
-def graph_detected_events_save(Data, Settings, Results, roi, lcpro = False):
+
+def graph_ts(Data, Settings, Results, roi = 'random', mode = 'display', lcpro = False):
     '''
-    Graph burst and peak results for a given roi. if roi = 'random', then a random roi will be selected.
-    There is also the option to overlay LCpro events and boundaries.
+    Plots the time series and all available elements of event detection.
+    Parameters
+    ----------
+    Data: dict
+        Must contain Data['original'], can contain any other version of data.
+    Settings: dict
+        dictionary that contains user settings. If setting is not included, section is skipped.
+    Results: dict
+        dictionary that contains results objects. If result object is not included, section is skipped.
+    roi: string
+        Name of the column of data (from Data dict columns) to be graphed. Also takes 'random', which will generate a random graph from any of the available columns
+    mode: string
+        If mode is set to save, then the resulting graph will be saved and not displayed. if it is set to 'display', it will display the graph but not automatically save it.
+    lcpro = bool
+        if lcpro events are available, then they can be optionally displayed in the graph.
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    Each section of graph is wrapped in try/except, meaning that all compunents do not need to be present when this function runs.
     '''
-    
     if roi.lower() == 'random':
-        rand_int = np.random.randint(len(Data['original'].columns))
-        roi = Data['original'].columns[rand_int]
-    
-    #set the correct data array
-    if Settings['Baseline Type'] == 'static':
-        data_temp = Data['trans']
-    elif Settings['Baseline Type'] == 'linear': 
-        data_temp = Data['shift']
-    elif Settings['Baseline Type'] == 'rolling':
-        data_temp = Data['rolling']
-
-    plt.figure()
-    plt.plot(data_temp.index, data_temp[roi], color = 'k', label= 'Time Series') #plot time series
-    plt.ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
-    plt.xlim(xmin = -1)
-    plt.title(roi+' Events')
-    
-    #plot peaks and valleys
-    try:
-        plt.plot(Results['Peaks'][roi].index, Results['Peaks'][roi]['Peaks Amplitude'], 
-                 marker = '^', color = 'b', linestyle = 'None', alpha = 1, label = 'RAIN Peak', markersize = 5)
-    except:
-        pass
-    try:
-        plt.plot(Results['Valleys'][roi].index, Results['Valleys'][roi]['Valley Amplitude'], 
-                 marker = 'v', color = 'm', linestyle = 'None', alpha = 1, label = 'RAIN Valley', markersize = 5)
-    except:
-        pass
-    #plot bursts
-    try:
-        if Settings['Baseline Type'] == 'static':
-            start_y = []
-            end_y = []
-            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
-                start_y.append(Settings['Threshold'])
-            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
-                end_y.append(Settings['Threshold'])
-            plt.plot(Results['Bursts'][roi]['Burst Start'], start_y,
-                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            plt.plot(Results['Bursts'][roi]['Burst End'], end_y,
-                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
-            
-        elif Settings['Baseline Type'] == 'linear': 
-            start_y = []
-            end_y = []
-            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
-                start_y.append(Results['Baseline'][roi]*Settings['Threshold'])
-            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
-                end_y.append(Results['Baseline'][roi]*Settings['Threshold'])
-            plt.plot(Results['Bursts'][roi]['Burst Start'], start_y,
-                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            plt.plot(Results['Bursts'][roi]['Burst End'], end_y,
-                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
-
-
-        elif Settings['Baseline Type'] == 'rolling':
-            plt.plot(Results['Bursts'][roi]['Burst Start'], Results['Bursts'][roi]['Burst Start Amplitude'],
-                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            plt.plot(Results['Bursts'][roi]['Burst End'], Results['Bursts'][roi]['Burst End Amplitude'],
-                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
-            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
-    
-    except:#this would be the case that no bursts were detected
-        pass
-    try:
-        if Settings['Baseline Type'] == 'static':
-            plt.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
-
-        elif Settings['Baseline Type'] == 'linear': 
-            plt.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
-                       Data['original'].index[-1], 'b', label = 'RAIN threshold')
-            plt.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
-            
-        elif Settings['Baseline Type'] == 'rolling':
-            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
-    except:
-        pass
-    
-    #LCPRO events
-    if lcpro == True:
+        try:
+            rand_int = np.random.randint(len(Data['original'].columns)) #get random ROI number
+            roi = Data['original'].columns[rand_int] #convert to column name
+        except:
+            roi = Data['original'].columns[0] #if random does not work, graph the first column of data
         
-        if Settings['Baseline Type'] == 'static' or Settings['Baseline Type'] == 'rolling':
-            plt.plot(Data['ROI parameters']['Time(s)'].loc[roi], Data['ROI parameters']['Amp(F/F0)'].loc[roi], 
-                     marker = 'o', color = 'r', linestyle = 'none', alpha = 0.4, label = 'LCPro Peak', markersize = 10)
-        elif Settings['Baseline Type'] == 'linear':
-            plt.plot(Data['ROI parameters']['Time(s)'].loc[roi], 
-                     (Data['ROI parameters']['Amp(F/F0)'].loc[roi] - Results['Baseline'][roi]), 
-                     marker = 'o', color = 'r', linestyle = 'none', alpha = 0.4, label = 'LCPro Peak', markersize = 10)
-            
-        plt.vlines(Data['ROI parameters']['Start time (s)'].loc[roi], ymin= min(data_temp.min()), 
-                   ymax =max(data_temp.max()), color = 'r', label = 'LCpro Boundary')
-        plt.vlines(Data['ROI parameters']['End time (s)'].loc[roi], ymin= min(data_temp.min()), 
-                   ymax =max(data_temp.max()), color = 'r')
-    
-    #plt.legend()
-    plt.savefig(r'%s/%s.pdf'%(Settings['plots folder'],roi))
-    plt.close()
+    plt.figure() #start a new figure
+    plt.title(roi) #set title of graph to just the name of the column
+    plt.xlabel('Time (s)')
 
-def graph_detected_events_display(Data, Settings, Results, roi, lcpro = False):
-    '''
-    Graph burst and peak results for a given roi. if roi = 'random', then a random roi will be selected.
-    There is also the option to overlay LCpro events and boundaries.
-    '''
-    
-    if roi.lower() == 'random':
-        rand_int = np.random.randint(len(Data['original'].columns))
-        roi = Data['original'].columns[rand_int]
-    
     #set the correct data array
-    if Settings['Baseline Type'] == 'static':
-        data_temp = Data['trans']
-    elif Settings['Baseline Type'] == 'linear': 
-        data_temp = Data['shift']
-    elif Settings['Baseline Type'] == 'rolling':
-        data_temp = Data['rolling']
-
-    plt.figure()
-    plt.plot(data_temp.index, data_temp[roi], color = 'k', label= 'Time Series') #plot time series
-    plt.ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
-    plt.xlim(xmin = -1)
-    plt.title(roi+' Events')
-    
-    #plot peaks and valleys
-    try:
-        plt.plot(Results['Peaks'][roi].index, Results['Peaks'][roi]['Peaks Amplitude'], 
-                 marker = '^', color = 'b', linestyle = 'None', alpha = 1, label = 'RAIN Peak', markersize = 5)
-    except:
-        pass
-    try:
-        plt.plot(Results['Valleys'][roi].index, Results['Valleys'][roi]['Valley Amplitude'], 
-                 marker = 'v', color = 'm', linestyle = 'None', alpha = 1, label = 'RAIN Valley', markersize = 5)
-    except:
-        pass
-    #plot bursts
     try:
         if Settings['Baseline Type'] == 'static':
-            start_y = []
-            end_y = []
-            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
-                start_y.append(Settings['Threshold'])
-            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
-                end_y.append(Settings['Threshold'])
-            plt.plot(Results['Bursts'][roi]['Burst Start'], start_y,
-                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            plt.plot(Results['Bursts'][roi]['Burst End'], end_y,
-                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
-            
+            data_temp = Data['trans']
+            plt.ylabel('Relative Amplitude (Transformed Data)')
         elif Settings['Baseline Type'] == 'linear': 
-            start_y = []
-            end_y = []
-            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
-                start_y.append(Results['Baseline'][roi]*Settings['Threshold'])
-            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
-                end_y.append(Results['Baseline'][roi]*Settings['Threshold'])
-            plt.plot(Results['Bursts'][roi]['Burst Start'], start_y,
-                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            plt.plot(Results['Bursts'][roi]['Burst End'], end_y,
-                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
-
-
+            data_temp = Data['shift']
+            plt.ylabel('Relative Amplitude (Shifted Data)')
         elif Settings['Baseline Type'] == 'rolling':
-            plt.plot(Results['Bursts'][roi]['Burst Start'], Results['Bursts'][roi]['Burst Start Amplitude'],
-                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
-            plt.plot(Results['Bursts'][roi]['Burst End'], Results['Bursts'][roi]['Burst End Amplitude'],
-                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
-            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+            data_temp = Data['rolling']
+            plt.ylabel('Relative Amplitude (Transformed Data)')
+    except: #if no baseline type is set
+        try: #try using data trans
+            data_temp = Data['trans']
+            plt.ylabel('Relative Amplitude (Transformed Data)')
+        except: #if not yet transformed, used original
+            data_temp = Data['original']
+            plt.ylabel('Amplitude (Raw Data)')
+
+    try: #graph data
+        plt.plot(data_temp.index, data_temp[roi], color = 'k', label= 'Time Series') #plot time series
+    except:
+        print 'Time Series for %s could not be graphed' %(roi)
     
-    except:#this would be the case that no bursts were detected
-        pass
+    try: #set limits
+        plt.ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
+        plt.xlim(xmin =  data_temp.index[0], data_temp.index[-1])
+    except: 
+        pass #default limits kick in. may be inconsistent if aligned time series 
     
-    try:
+    try: #graph baseline
         if Settings['Baseline Type'] == 'static':
-            plt.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'b', label = 'RAIN threshold')
+            pass #there is no baseline MWAHAHAHAHA
+            #I guess I left this in here to be consistent
+            #and confuse you, you sweet, innocent little developer. 
+            #and I left this comment to make you laugh.
+            #Oh god, this is my life... 
 
         elif Settings['Baseline Type'] == 'linear': 
-            plt.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
-                       Data['original'].index[-1], 'b', label = 'RAIN threshold')
-            plt.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'k', label = 'Baseline')
+            plt.hlines(0, Data['original'].index[0], Data['original'].index[-1], 'b', label = 'Baseline')
             
         elif Settings['Baseline Type'] == 'rolling':
             plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
-            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+
     except:#baseline has not yet been set
         pass
 
+    try: #graph threshold
+        if Settings['Baseline Type'] == 'static':
+            plt.hlines(Settings['Threshold'], Data['original'].index[0], Data['original'].index[-1], 'r', label = 'Threshold')
+
+        elif Settings['Baseline Type'] == 'linear': 
+            plt.hlines(Results['Baseline'][roi]*Settings['Threshold'], Data['original'].index[0], 
+                       Data['original'].index[-1], 'r', label = 'Threshold')
+            
+        elif Settings['Baseline Type'] == 'rolling':
+            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+    except:#threshold has not yet been set
+        pass
+    
+    #plot peaks
+    try:
+        plt.plot(Results['Peaks'][roi].index, Results['Peaks'][roi]['Peaks Amplitude'], 
+                 marker = '^', color = 'b', linestyle = 'None', alpha = 1, label = 'Peak', markersize = 5)
+    except:
+        pass
+    #plot valleys
+    try:
+        plt.plot(Results['Valleys'][roi].index, Results['Valleys'][roi]['Valley Amplitude'], 
+                 marker = 'v', color = 'm', linestyle = 'None', alpha = 1, label = 'Valley', markersize = 5)
+    except:
+        pass
+    #plot bursts
+    try:
+        if Settings['Baseline Type'] == 'static':
+            start_y = []
+            end_y = []
+            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
+                start_y.append(Settings['Threshold'])
+            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
+                end_y.append(Settings['Threshold'])
+            plt.plot(Results['Bursts'][roi]['Burst Start'], start_y,
+                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
+            plt.plot(Results['Bursts'][roi]['Burst End'], end_y,
+                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
+            
+        elif Settings['Baseline Type'] == 'linear': 
+            start_y = []
+            end_y = []
+            for i in np.arange(len(Results['Bursts'][roi]['Burst Start'])):
+                start_y.append(Results['Baseline'][roi]*Settings['Threshold'])
+            for i in np.arange(len(Results['Bursts'][roi]['Burst End'])):
+                end_y.append(Results['Baseline'][roi]*Settings['Threshold'])
+            plt.plot(Results['Bursts'][roi]['Burst Start'], start_y,
+                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
+            plt.plot(Results['Bursts'][roi]['Burst End'], end_y,
+                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
+
+
+        elif Settings['Baseline Type'] == 'rolling':
+            plt.plot(Results['Bursts'][roi]['Burst Start'], Results['Bursts'][roi]['Burst Start Amplitude'],
+                     marker = 's', color = 'g', linestyle = 'None', alpha = 1, label = 'Burst Start', markersize = 5)
+            plt.plot(Results['Bursts'][roi]['Burst End'], Results['Bursts'][roi]['Burst End Amplitude'],
+                     marker = 's', color = 'y', linestyle = 'None', alpha = 1, label = 'Burst End', markersize = 5)
+            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi], 'b') #in this instance, baseline = rolling average
+            plt.plot(Results['Baseline-Rolling'][roi].index, Results['Baseline-Rolling'][roi]+Settings['Threshold'], 'r')
+    
+    except:#this would be the case that no bursts were detected
+        pass
     
     #LCPRO events
     if lcpro == True:
         
-        if Settings['Baseline Type'] == 'static' or Settings['Baseline Type'] == 'rolling':
-            plt.plot(Data['ROI parameters']['Time(s)'].loc[roi], Data['ROI parameters']['Amp(F/F0)'].loc[roi], 
-                     marker = 'o', color = 'r', linestyle = 'none', alpha = 0.4, label = 'LCPro Peak', markersize = 10)
-        elif Settings['Baseline Type'] == 'linear':
-            plt.plot(Data['ROI parameters']['Time(s)'].loc[roi], 
-                     (Data['ROI parameters']['Amp(F/F0)'].loc[roi] - Results['Baseline'][roi]), 
-                     marker = 'o', color = 'r', linestyle = 'none', alpha = 0.4, label = 'LCPro Peak', markersize = 10)
-            
-        plt.vlines(Data['ROI parameters']['Start time (s)'].loc[roi], ymin= min(data_temp.min()), 
-                   ymax =max(data_temp.max()), color = 'r', label = 'LCpro Boundary')
-        plt.vlines(Data['ROI parameters']['End time (s)'].loc[roi], ymin= min(data_temp.min()), 
-                   ymax =max(data_temp.max()), color = 'r')
+        try:
+            if Settings['Baseline Type'] == 'static' or Settings['Baseline Type'] == 'rolling':
+                plt.plot(Data['ROI parameters']['Time(s)'].loc[roi], Data['ROI parameters']['Amp(F/F0)'].loc[roi], 
+                         marker = 'o', color = 'r', linestyle = 'none', alpha = 0.4, label = 'LCPro Peak', markersize = 10)
+            elif Settings['Baseline Type'] == 'linear':
+                plt.plot(Data['ROI parameters']['Time(s)'].loc[roi], 
+                         (Data['ROI parameters']['Amp(F/F0)'].loc[roi] - Results['Baseline'][roi]), 
+                         marker = 'o', color = 'r', linestyle = 'none', alpha = 0.4, label = 'LCPro Peak', markersize = 10)
+                
+            plt.vlines(Data['ROI parameters']['Start time (s)'].loc[roi], ymin= min(data_temp.min()), 
+                       ymax =max(data_temp.max()), color = 'r', label = 'LCpro Boundary')
+            plt.vlines(Data['ROI parameters']['End time (s)'].loc[roi], ymin= min(data_temp.min()), 
+                       ymax =max(data_temp.max()), color = 'r')
+            plt.legend()
+        except:
+            pass
     
-    #plt.legend()
-    #plt.savefig(r'%s/%s.pdf'%(Settings['plots folder'],roi))
-    #plt.close()
-    plt.show()
+    if mode == 'save':
+    
+        plt.savefig(r'%s/%s.pdf'%(Settings['plots folder'],roi))
+        plt.close()
+    elif mode == 'display':
+        plt.show()
+    else:
+        plt.show()
+    return
 
 def average_measurement_plot(event_type, meas, Results):
     """
