@@ -788,22 +788,26 @@ def savgolay_settings():
     
     temp_list = temp_list.split(',')
     
-    if temp_list[0] == "none" or temp_list[0] == "false":
+    if temp_list[0] == "none" or temp_list[0] == "false" or temp_list == '':
         window = "none"
         poly = "none"
     else:
         window = int(temp_list[0])
         poly = int(temp_list[1])
+
+        if window % 2 == 0:
+            print "ERROR: window size must be odd."
+            print " "
+            savgolay_settings()
+        if poly < 3:
+            poly = 3
     return window, poly
     '''
     if len(temp_list) != 2:
         print "ERROR: There should be two parameters separated by a comma."
         print " "
         savgolay_settings()
-    if window % 2 == 0:
-        print "ERROR: window size must be odd."
-        print " "
-        savgolay_settings()
+    
     '''
     
 def bandpass_settings():
@@ -833,7 +837,7 @@ def bandpass_settings():
     
     temp_list = temp_list.split(',')
     
-    if temp_list[0] == "none" or temp_list[0] == "false":
+    if temp_list[0] == "none" or temp_list[0] == "false" or temp_list == '':
         lowcut = "none"
         highcut = "none"
         poly = "none"
@@ -1084,7 +1088,10 @@ def user_input_base(Settings):
         
     baseline_type = raw_input('Enter Linear, Rolling, or Static: ').lower()
     
-    if baseline_type == 'static':
+    if baseline_type = '': #defaults to static
+        baseline_type = 'static'
+
+    elif baseline_type == 'static':
         Settings['Baseline Type'] = baseline_type
         return Settings
     
@@ -1114,6 +1121,9 @@ def user_input_base(Settings):
         if window < 2:
             print ("You entered a window size so small it won't run. Give me a larger window size.")
             user_input_base(Settings)
+
+        if window % 2 !=0: #if this is not an even number
+            window += 1 
     
     else:
         print 'That was not an acceptable baseline type. Try again.'
@@ -1390,7 +1400,7 @@ def event_peakdet_settings(Data, Settings):
     Delta:  
     Examples
     --------
-    Settings = user_input_base(Settings)
+    Settings = event_peakdet_settings(Data, Settings)
     '''
     if 'Delta' in Settings.keys():
         print "Previous delta value: %s" %Settings['Delta']
