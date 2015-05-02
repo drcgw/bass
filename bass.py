@@ -2307,8 +2307,8 @@ def graph_ts(Data, Settings, Results, roi = 'random', mode = 'display', lcpro = 
         print 'Time Series for %s could not be graphed' %(roi)
     
     try: #set limits
-        plt.ylim(ymin= min(data_temp.min()), ymax =max(data_temp.max()))
-        plt.xlim(xmin =  data_temp.index[0], data_temp.index[-1])
+        plt.ylim(ymin= min(data_temp.min()), ymax= max(data_temp.max()))
+        plt.xlim(xmin= data_temp.index[0], xmax= data_temp.index[-1])
     except: 
         pass #default limits kick in. may be inconsistent if aligned time series 
     
@@ -2821,10 +2821,16 @@ def psd_signal(version, key, scale, Data, Settings, Results):
 
         #LF/HF
         results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
-        results_psd['Scale'] = scale
+        results_psd['Scale'] = NaN
         
         if scale.lower() == 'db':
-            results_psd = 10*np.log10(results_psd)
+            try:
+                results_psd = 10*np.log10(results_psd)
+                results_psd['Scale'] = 'dB/Hz'
+            except:
+                results_psd['Scale'] = 's^2/Hz'
+        else:
+            results_psd['Scale'] = 's^2/Hz'
 
         Results['PSD-Signal'][key] = results_psd
         Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv' %(Settings['Output Folder'], Settings['Label']))
@@ -2971,10 +2977,16 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
 
         #LF/HF
         results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
-        results_psd['Scale'] = scale
+        results_psd['Scale'] = NaN
         
         if scale.lower() == 'db':
-            results_psd = 10*np.log10(results_psd)
+            try:
+                results_psd = 10*np.log10(results_psd)
+                results_psd['Scale'] = 'dB/Hz'
+            except:
+                results_psd['Scale'] = 's^2/Hz'
+        else:
+            results_psd['Scale'] = 's^2/Hz'
         
         Results['PSD-Event'][key][meas] = results_psd
         
