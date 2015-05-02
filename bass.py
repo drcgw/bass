@@ -204,6 +204,9 @@ def load_wrapper(Data, Settings):
         Data['original'] = data
         print 'Data Loaded'
         Settings['Sample Rate (s/frame)'] = Data['original'].index[1] - Data['original'].index[0]
+        print 'Sampling Rate= %s (sec/frame)' %(Settings['Sample Rate (s/frame)'])
+        length = Data['original'].index[-1] - Data['original'].index[0]
+        print '%s is %s seconds long.' %(Settings['Label'], length)
         Settings['Graph LCpro events'] = False
 
 
