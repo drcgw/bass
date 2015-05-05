@@ -2785,6 +2785,18 @@ def psd_signal(version, key, scale, Data, Settings, Results):
     ----------
     http://docs.scipy.org/doc/scipy-dev/reference/generated/scipy.signal.welch.html
     '''
+    try:
+        psd_e_folder = Settings['Output Folder'] +"/PSD-Signal"
+        mkdir_p(psd_e_folder) #makes a plots folder if does not exist
+        
+    except:
+        try:
+            psd_e_folder = Settings['Output Folder'] +"\PSD-Signal"
+            mkdir_p(psd_e_folder) #makes a plots folder if does not exist
+            
+        except:
+            print "Could not make psd events folder. :("
+
     sig = Data[version][key].tolist()
     hertz = int(1/Settings['Sample Rate (s/frame)']) #must be int to protect welch
     Fxx, Pxx = scipy.signal.welch(sig, fs = hertz, window="hanning", nperseg=2*hertz, noverlap=hertz/2, nfft=2*hertz, detrend='linear', return_onesided=True, scaling='density')
@@ -2841,10 +2853,14 @@ def psd_signal(version, key, scale, Data, Settings, Results):
                 results_psd['Scale'] = 's^2/Hz'
         else:
             results_psd['Scale'] = 's^2/Hz'
-
+        
         Results['PSD-Signal'][key] = results_psd
-        Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv' %(Settings['Output Folder'], Settings['Label']))
-        Settings['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal_Settings.csv' %(Settings['Output Folder'], Settings['Label']))
+        try:
+            Results['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal.csv' %(psd_e_folder, Settings['Label']))
+            Settings['PSD-Signal'].to_csv(r'%s/%s_PSD_Signal_Settings.csv' %(psd_e_folder, Settings['Label']))
+        except: #for windows
+            Results['PSD-Signal'].to_csv(r'%s\%s_PSD_Signal.csv' %(psd_e_folder, Settings['Label']))
+            Settings['PSD-Signal'].to_csv(r'%s\%s_PSD_Signal_Settings.csv' %(psd_e_folder, Settings['Label']))    
     except:
         print "Could not calculate area in bands."
 
