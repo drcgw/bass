@@ -1088,7 +1088,7 @@ def user_input_base(Settings):
         
     baseline_type = raw_input('Enter Linear, Rolling, or Static: ').lower()
     
-    if baseline_type = '': #defaults to static
+    if baseline_type == '': #defaults to static
         baseline_type = 'static'
 
     elif baseline_type == 'static':
@@ -1612,7 +1612,7 @@ def event_peakdet_wrapper(Data, Settings, Results):
 #Event-Burst Detection
 #
 #
-def event_burstdet_settings(Data, Settings):
+def event_burstdet_settings(Data, Settings, Results):
     '''
     WRITE DOCSTRING
     '''
@@ -2907,7 +2907,18 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     interpolation adopted form Rhenan Bartels Ferreira 
     https://github.com/RhenanBartels/biosignalprocessing/blob/master/psdRRi.py
     '''
-    
+    try:
+        psd_e_folder = Settings['Output Folder'] +"/PSD-Event"
+        mkdir_p(psd_e_folder) #makes a plots folder if does not exist
+        
+    except:
+        try:
+            psd_e_folder = Settings['Output Folder'] +"\PSD-Event"
+            mkdir_p(psd_e_folder) #makes a plots folder if does not exist
+            
+        except:
+            print "Could not make psd events folder. :("
+
     if event_type.lower() == 'peaks':
         measurement = Results['Peaks']
         columns = Results['Peaks-Master']
@@ -2968,22 +2979,23 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
         
         df_power = DataFrame( index = Fxx, data = Pxx)
         df_power.columns = ['Power']
+        results_psd = Series(index = ['ULF', 'VLF', 'LF','HF','LF/HF', 'Scale'])
 
         #ULF
-        df_ulf = df_power[df_power.index<Settings['PSD-Signal']['ULF']]
-        results_psd['ULF'] = scipy.integrate.simps(df_ulf['Power'], df_ulf.index, dx =Settings['PSD-Signal']['dx'])
+        df_ulf = df_power[df_power.index<Settings['PSD-Event']['ULF']]
+        results_psd['ULF'] = scipy.integrate.simps(df_ulf['Power'], df_ulf.index, dx =Settings['PSD-Event']['dx'])
 
         #VLF
-        df_vlf = df_power[(df_power.index>Settings['PSD-Signal']['ULF']) & (df_power.index<=Settings['PSD-Signal']['VLF'])]
-        results_psd['VLF'] = scipy.integrate.simps(df_vlf['Power'], df_vlf.index, dx =Settings['PSD-Signal']['dx'])
+        df_vlf = df_power[(df_power.index>Settings['PSD-Event']['ULF']) & (df_power.index<=Settings['PSD-Event']['VLF'])]
+        results_psd['VLF'] = scipy.integrate.simps(df_vlf['Power'], df_vlf.index, dx =Settings['PSD-Event']['dx'])
 
         #LF
-        df_lf = df_power[(df_power.index>Settings['PSD-Signal']['VLF']) & (df_power.index<=Settings['PSD-Signal']['LF'])]
-        results_psd['LF'] = scipy.integrate.simps(df_lf['Power'], df_lf.index, dx =Settings['PSD-Signal']['dx'])
+        df_lf = df_power[(df_power.index>Settings['PSD-Event']['VLF']) & (df_power.index<=Settings['PSD-Event']['LF'])]
+        results_psd['LF'] = scipy.integrate.simps(df_lf['Power'], df_lf.index, dx =Settings['PSD-Event']['dx'])
 
         #HF
-        df_hf = df_power[(df_power.index>Settings['PSD-Signal']['LF']) & (df_power.index<=Settings['PSD-Signal']['HF'])]
-        results_psd['HF'] = scipy.integrate.simps(df_hf['Power'], df_hf.index, dx =Settings['PSD-Signal']['dx'])
+        df_hf = df_power[(df_power.index>Settings['PSD-Event']['LF']) & (df_power.index<=Settings['PSD-Event']['HF'])]
+        results_psd['HF'] = scipy.integrate.simps(df_hf['Power'], df_hf.index, dx =Settings['PSD-Event']['dx'])
 
         #LF/HF
         results_psd['LF/HF'] = results_psd['LF']/results_psd['HF']
@@ -3001,10 +3013,12 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
         Results['PSD-Event'][key][meas] = results_psd
         
         temp_psd_master = pd.concat(Results['PSD-Event'])
-        temp_psd_master.to_csv(r'%s/%s_PSD_Events.csv'
-                                               %(Settings['Output Folder'], Settings['Label']))
-        Settings['PSD-Event'].to_csv(r'%s/%s_PSD_Events_Settings.csv'
-                                               %(Settings['Output Folder'], Settings['Label']))
+        try:
+            temp_psd_master.to_csv(r'%s/%s_PSD_Events.csv' %(psd_e_folder, Settings['Label']))
+            Settings['PSD-Event'].to_csv(r'%s/%s_PSD_Events_Settings.csv' %(psd_e_folder, Settings['Label']))
+        except: #for windows
+            temp_psd_master.to_csv(r'%s\%s_PSD_Events.csv' %(psd_e_folder, Settings['Label']))
+            Settings['PSD-Event'].to_csv(r'%s\%s_PSD_Events_Settings.csv' %(psd_e_folder, Settings['Label']))
     except:
         print "Could not calculate power in band."
     return Results
