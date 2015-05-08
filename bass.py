@@ -2705,11 +2705,88 @@ def poincare_plot(series):
     print SD1RR+' s'
     print SD2RR+' s'
 
-def poincare_batch():
+def poincare_batch(event_type, meas, Data, Settings, Results):
     '''
+    loop poincare
+    '''
+    try:
+        new_folder = Settings['Output Folder'] +"/Poicare"
+        mkdir_p(histent_folder) #makes a plots folder if does not exist
+        
+    except:
+        try:
+            histent_folder = Settings['Output Folder'] +"\Poicare"
+            mkdir_p(new_folder) #makes a plots folder if does not exist
+            
+        except:
+            print "Could not make Histogram Entropy folder. :("
 
-    '''
-    #LOOP POINCARE RESULTS AND PLOT
+    if 'Poincare SD1' not in Results.keys():
+        Results['Poincare SD1'] = DataFrame(index = Data['original'].columns)
+        Results['Poincare SD2'] = DataFrame(index = Data['original'].columns)
+
+    
+    if event_type.lower() == 'peaks':
+        measurement = Results['Peaks']
+        columns = Results['Peaks-Master']
+
+    elif event_type.lower() == 'bursts':
+        measurement = Results['Bursts']
+        columns = Results['Bursts-Master']
+    else:
+        raise ValueError('Not an acceptable event type measurement.\n Must be "Peaks" or "Bursts" ')
+    
+    if meas.lower() == 'all':
+        for name in columns:
+
+            Results = poincare_batch(event_type, name, Data, Settings, Results)
+
+        print "All %s measurements analyzed." %(event_type)
+        return Results
+
+    else:
+        sd1 = Series(index = Data['original'].columns)
+        sd2 = Series(index = Data['original'].columns)
+        for key, value in measurement.iteritems():
+            
+            temp_list = value[meas].tolist() #copy the correct array into a list
+            
+            try:
+                x, y, xc, yc, SD1, SD2 = poincare(temp_list[:-1])
+                sd1[key] = SD1
+                sd2[key] = SD2
+            except:
+                SD1 = NaN
+                SD2 = NaN
+                sd1[key] = SD1
+                sd2[key] = SD2
+            
+            try:
+                ax = plt.subplot(111, aspect = "equal")
+                ellipse = patches.Ellipse(xy=(xc, yc), width = SD2, height = SD1, angle = 45, fill = False, color = "r")
+                ax.add_artist(ellipse)
+                plt.plot(xc, yc, color="r", marker= "+")
+                plt.scatter(x, y, color = 'k', marker = '.')
+                plt.title('Poincare Plot-%s' %key)
+                plt.savefig(r'%s/%s-%s Poincare Plot - %s.pdf'%(new_folder, event_type,meas, key))
+                plt.close()
+            except:
+                pass
+            
+        Results['Poincare SD1'][meas] = sd1
+        Results['Poincare SD2'][meas] = sd2
+
+        try:
+            Results['Poincare SD1'].to_csv(r'%s/%s_Poincare SD1.csv'
+                                               %(new_folder, Settings['Label']))
+            Results['Poincare SD2'].to_csv(r'%s/%s_Poincare SD2.csv'
+                                               %(new_folder, Settings['Label']))
+        except:
+            Results['Poincare SD1'].to_csv(r'%s\%s_Poincare SD1.csv'
+                                               %(new_folder, Settings['Label']))
+            Results['Poincare SD2'].to_csv(r'%s\%s_Poincare SD2.csv'
+                                               %(new_folder, Settings['Label']))
+        return Results
     
 #
 #Signal Theory
@@ -3369,6 +3446,8 @@ def samp_entropy_wrapper(event_type, meas, Data, Settings, Results):
         try:
             new_folder = Settings['Output Folder'] +"\Sample Entropy"
             mkdir_p(new_folder) #makes a plots folder if does not exist
+        except:
+            print "Could not make Sample Entropy folder. :("
 
     if 'Sample Entropy' not in Results.keys():
         Results['Sample Entropy'] = DataFrame(index = Data['original'].columns)
@@ -3473,6 +3552,8 @@ def moving_statistics(event_type, meas, window, Data, Settings, Results):
         try:
             new_folder = Settings['Output Folder'] +"\Moving Stats"
             mkdir_p(new_folder) #makes a plots folder if does not exist
+        except:
+            print "Could not make Moving Stats folder. :("
 
     #make Results dictionary if does not exsist
     if 'Moving Stats' not in Results.keys():
