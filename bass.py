@@ -2812,6 +2812,10 @@ def psd_signal(version, key, scale, Data, Settings, Results):
         plt.title(r"Welch's PSD of %s in (s^2/Hz)" %(key))
     
     plt.xlabel("Frequency (Hz)")
+    try:
+        plt.savefig(r'%s/PSD - %s.pdf'%(psd_e_folder, key))
+    except:
+        plt.savefig(r'%s\PSD - %s.pdf'%(psd_e_folder, key))
     plt.show()
     
 
@@ -2982,6 +2986,12 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
         plt.title(r"Welch's PSD of %s in (s^2/Hz)" %(key))
     
     plt.xlabel("Frequency (Hz)")
+    
+    try:
+        plt.savefig(r'%s/%s-%s PSD - %s.pdf'%(psd_e_folder, event_type,meas, key))
+    except:
+        plt.savefig(r'%s\%s-%s PSD - %s.pdf'%(psd_e_folder, event_type,meas, key))
+    
     plt.show()
     
 
