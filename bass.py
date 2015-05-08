@@ -3130,7 +3130,18 @@ def histent_wrapper(event_type, meas, Data, Settings, Results):
     histent_wrapper(event_type, meas, Settings, Results)
     Results['Histogram Entropy']
     """
-    
+    try:
+        histent_folder = Settings['Output Folder'] +"/Histogram Entropy"
+        mkdir_p(histent_folder) #makes a plots folder if does not exist
+        
+    except:
+        try:
+            histent_folder = Settings['Output Folder'] +"\Histogram Entropy"
+            mkdir_p(histent_folder) #makes a plots folder if does not exist
+            
+        except:
+            print "Could not make Histogram Entropy folder. :("
+
     if 'Histogram Entropy' not in Results.keys():
         Results['Histogram Entropy'] = DataFrame(index = Data['original'].columns)
     
@@ -3178,8 +3189,13 @@ def histent_wrapper(event_type, meas, Data, Settings, Results):
                 pass
             
         Results['Histogram Entropy'][meas] = temp_histent
-        Results['Histogram Entropy'].to_csv(r'%s/%s_Histogram_Entropy.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
+
+        try:
+            Results['Histogram Entropy'].to_csv(r'%s/%s_Histogram_Entropy.csv'
+                                               %(histent_folder, Settings['Label']))
+        except:
+            Results['Histogram Entropy'].to_csv(r'%s\%s_Histogram_Entropy.csv'
+                                               %(histent_folder, Settings['Label']))
         return Results
 
 def ap_entropy_wrapper(event_type, meas, Data, Settings, Results):
