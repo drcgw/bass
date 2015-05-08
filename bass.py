@@ -3183,7 +3183,7 @@ def histent_wrapper(event_type, meas, Data, Settings, Results):
                 plt.xlabel('%s' %meas)
                 plt.ylabel('Count')
                 plt.title(r'%s-%s Histogram - %s' %(event_type, meas,key))
-                plt.savefig(r'%s/%s-%s Histogram - %s.pdf'%(Settings['plots folder'], event_type,meas, key))
+                plt.savefig(r'%s/%s-%s Histogram - %s.pdf'%(histent_folder, event_type,meas, key))
                 plt.close()
             except:
                 pass
@@ -3247,6 +3247,18 @@ def ap_entropy_wrapper(event_type, meas, Data, Settings, Results):
     except ImportError:
         print "You do not have the pyeeg module and cannot use this code." 
     
+    try:
+        new_folder = Settings['Output Folder'] +"/Approximate Entropy"
+        mkdir_p(new_folder) #makes a plots folder if does not exist
+        
+    except:
+        try:
+            new_folder = Settings['Output Folder'] +"\Approximate Entropy"
+            mkdir_p(new_folder) #makes a plots folder if does not exist
+            
+        except:
+            print "Could not make Histogram Entropy folder. :("
+
     if 'Approximate Entropy' not in Results.keys():
         Results['Approximate Entropy'] = DataFrame(index = Data['original'].columns)
     
@@ -3283,8 +3295,11 @@ def ap_entropy_wrapper(event_type, meas, Data, Settings, Results):
                 temp_apent[key] = ap_ent
             
         Results['Approximate Entropy'][meas] = temp_apent
-        Results['Approximate Entropy'].to_csv(r'%s/%s_Approximate_Entropy.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
+
+        try:
+            Results['Approximate Entropy'].to_csv(r'%s/%s_Approximate_Entropy.csv' %(new_folder, Settings['Label']))
+        except:
+            Results['Approximate Entropy'].to_csv(r'%s\%s_Approximate_Entropy.csv' %(new_folder, Settings['Label']))
         return Results
 
 def samp_entropy_wrapper(event_type, meas, Data, Settings, Results):
@@ -3336,6 +3351,15 @@ def samp_entropy_wrapper(event_type, meas, Data, Settings, Results):
     except ImportError:
         print "You do not have the pyeeg module and cannot use this code." 
     
+    try:
+        new_folder = Settings['Output Folder'] +"/Sample Entropy"
+        mkdir_p(new_folder) #makes a plots folder if does not exist
+        
+    except:
+        try:
+            new_folder = Settings['Output Folder'] +"\Sample Entropy"
+            mkdir_p(new_folder) #makes a plots folder if does not exist
+
     if 'Sample Entropy' not in Results.keys():
         Results['Sample Entropy'] = DataFrame(index = Data['original'].columns)
     
@@ -3372,8 +3396,12 @@ def samp_entropy_wrapper(event_type, meas, Data, Settings, Results):
                 temp_sampent[key] = samp_ent
             
         Results['Sample Entropy'][meas] = temp_sampent
-        Results['Sample Entropy'].to_csv(r'%s/%s_Sample_Entropy.csv'
-                                           %(Settings['Output Folder'], Settings['Label']))
+
+        try:
+            Results['Sample Entropy'].to_csv(r'%s/%s_Sample_Entropy.csv' %(new_folder, Settings['Label']))
+        except:
+            Results['Sample Entropy'].to_csv(r'%s\%s_Sample_Entropy.csv' %(new_folder, Settings['Label']))
+            
         return Results
 
 #
