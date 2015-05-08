@@ -3401,7 +3401,7 @@ def samp_entropy_wrapper(event_type, meas, Data, Settings, Results):
             Results['Sample Entropy'].to_csv(r'%s/%s_Sample_Entropy.csv' %(new_folder, Settings['Label']))
         except:
             Results['Sample Entropy'].to_csv(r'%s\%s_Sample_Entropy.csv' %(new_folder, Settings['Label']))
-            
+
         return Results
 
 #
@@ -3454,6 +3454,16 @@ def moving_statistics(event_type, meas, window, Data, Settings, Results):
     window = 60 #seconds
     Results = moving_statistics(event_type, meas, window, Data, Settings, Results)
     """
+    
+    try:
+        new_folder = Settings['Output Folder'] +"/Moving Stats"
+        mkdir_p(new_folder) #makes a plots folder if does not exist
+        
+    except:
+        try:
+            new_folder = Settings['Output Folder'] +"\Moving Stats"
+            mkdir_p(new_folder) #makes a plots folder if does not exist
+
     #make Results dictionary if does not exsist
     if 'Moving Stats' not in Results.keys():
         Results['Moving Stats'] = {}
@@ -3517,12 +3527,14 @@ def moving_statistics(event_type, meas, window, Data, Settings, Results):
         Results['Moving Stats'][r'%s-Std'%meas] = sliding_std.sort_index(axis = 1)
         
         #autosave out these results
-        Results['Moving Stats'][r'%s-Count'%meas].to_csv(r'%s/%s_%s_Count.csv'
-                                       %(Settings['Output Folder'], Settings['Label'], meas))
-        Results['Moving Stats'][r'%s-Mean'%meas].to_csv(r'%s/%s_%s_Mean.csv'
-                                       %(Settings['Output Folder'], Settings['Label'], meas))
-        Results['Moving Stats'][r'%s-Std'%meas].to_csv(r'%s/%s_%s_std.csv'
-                                       %(Settings['Output Folder'], Settings['Label'], meas))
+        try:
+            Results['Moving Stats'][r'%s-Count'%meas].to_csv(r'%s/%s_%s_Count.csv' %(new_folder, Settings['Label'], meas))
+            Results['Moving Stats'][r'%s-Mean'%meas].to_csv(r'%s/%s_%s_Mean.csv' %(new_folder, Settings['Label'], meas))
+            Results['Moving Stats'][r'%s-Std'%meas].to_csv(r'%s/%s_%s_std.csv' %(new_folder, Settings['Label'], meas))
+        except:
+            Results['Moving Stats'][r'%s-Count'%meas].to_csv(r'%s\%s_%s_Count.csv' %(new_folder, Settings['Label'], meas))
+            Results['Moving Stats'][r'%s-Mean'%meas].to_csv(r'%s\%s_%s_Mean.csv' %(new_folder, Settings['Label'], meas))
+            Results['Moving Stats'][r'%s-Std'%meas].to_csv(r'%s\%s_%s_std.csv' %(new_folder, Settings['Label'], meas))
         
         print meas, 'Count'
         print Results['Moving Stats'][r'%s-Count'%meas]
