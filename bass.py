@@ -1,6 +1,4 @@
-'''
-Abby's Thoughts About BASS
----------------------------
+''' Abby's Thoughts About BASS ---------------------------
 
 BASS is a set of tools that acts as the foundations and archetecture of a pipeline for event detection and analysis. this allows the user to 'build their own' specialized event detection package for their own data. It was also designed for integration into the Ipython notebook, as well as easy customization. This lab intends to design several specalized notebooks that will be included in the BASS release that use this tool in specific biological contexts.
 
@@ -2109,7 +2107,7 @@ def Save_Results(Data, Settings, Results):
                                                  now.strftime('%Y_%m_%d__%H_%M_%S')))
     
     print "All results saved to: ", Settings['Output Folder']
-    print "Thank you for chosing BASS.py for all your basic analysis needs. Proceed for graphs and advanced analysis."
+    print "Thank you for chosing BASS.py for all your basic analysis needs. Proceed for graphs and event analysis."
     print "Analysis Complete"
     
     print "\n--------------------------------------------"
