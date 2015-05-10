@@ -1,32 +1,32 @@
-,Settings: 2015-03-26 10:50:03.159483
-Absolute Value,True
-Bandpass Highcut,none
-Bandpass Lowcut,none
-Bandpass Polynomial,none
-Baseline Type,static
-Burst Area,False
-Delta,0.25
-Exclude Edges,True
-File Type,Plain
-Generate Graphs,False
-Graph LCpro events,False
-Inter-event interval minimum (seconds),0.01
-Label,rat34_ECG.txt
-Linear Fit,False
-Linear Fit-Rolling R,0.75
-Linear Fit-Rolling Window,1000
-Maximum Burst Duration (s),10
-Milliseconds,False
-Minimum Burst Duration (s),0
-Minimum Peak Number,1
-Output Folder,/Users/abigaildobyns/Desktop/demo
-Peak Maximum,inf
-Peak Minimum,-inf
-Relative Baseline,0
-Rolling Baseline Window,none
-Sample Rate (s/frame),0.00025
-Savitzky-Golay Polynomial,4
-Savitzky-Golay Window Size,251
-Threshold,0.15
-folder,/Users/abigaildobyns/Desktop
-plots folder,/Users/abigaildobyns/Desktop/demo/plots
+	Settings: 2015-03-26 10:50:03.159483
+Absolute Value	True
+Bandpass Highcut	none
+Bandpass Lowcut	none
+Bandpass Polynomial	none
+Baseline Type	static
+Burst Area	False
+Delta	0.25
+Exclude Edges	True
+File Type	Plain
+Generate Graphs	False
+Graph LCpro events	False
+Inter-event interval minimum (seconds)	0.01
+Label	rat34_ECG.txt
+Linear Fit	False
+Linear Fit-Rolling R	0.75
+Linear Fit-Rolling Window	1000
+Maximum Burst Duration (s)	10
+Milliseconds	False
+Minimum Burst Duration (s)	0
+Minimum Peak Number	1
+Output Folder	/Users/abigaildobyns/Desktop/demo
+Peak Maximum	0
+Peak Minimum	0.7
+Relative Baseline	0
+Rolling Baseline Window	none
+Sample Rate (s/frame)	0.00025
+Savitzky-Golay Polynomial	4
+Savitzky-Golay Window Size	251
+Threshold	0.15
+folder	/Users/abigaildobyns/Desktop
+plots folder	/Users/abigaildobyns/Desktop/demo/plots
