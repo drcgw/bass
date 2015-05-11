@@ -1,5 +1,32 @@
 Change Log
 
+Beta 1.2: 05-10-2015
+
+Major Changes:
+- Name changed to BASS. Source code is moved to bass.py, which is then imported.
+- Three notebooks: Interactive, Basic, and Kitchen Sink. Interactive and Basic have the same event analysis sections, but the inputs for Event Detection are different. Interactive is slower, but more interactive, calling for each piece of the detection settings one at a time. Basic allows users to simply type into the code box exactly what they want their settings to be, then run the transformation, baseline, and detections all in one step. Kitchen Sink is like Abby's dev notebook. zero notes and interaction, just raw code. It is included because it may be handy for other developers to have a stripped down version of the other notebooks. 
+
+New Features:
+- Power Spectral Density, Spectrogram, Approximate entropy, and sample entropy for raw signal
+- Static threshold allows the user to skip baseline generation and state the desired threshold for bursts.
+- Peaks can now be filtered post detection using minimum and maximum amplitudes.
+- Bursts can now be filtered post detection using minimum and maximum duration, minimum number of peaks, and if it is an edge event.
+- A detection summary statement is printed after events are saved, displaying objects available for event analysis.
+- Moving statistics for event analysis generates a sliding average, standard deviation, and count with a user specified time window.
+- Line graph with error bars of each time series key.
+- Autocorrelation of transformed time series.
+
+Updates:
+- All Event Analyses is now callable by event type and measurment. Some are also callable by Key.
+- Can call meas = 'all' to loop through all available measurments for a given event type in poincare plots, histogram entropy, approximate entropy, and sample entropy.
+- Automatic table and/or graph saving in subfolders in power spectral density, poincare plots, moving statistics, histogram entropy, approximate entropy, and sample entropy.
+- Better windows integration and checking
+- Linear fit and subtraction now comes with an r threshold, where it is only executed if the fit is greater than the threshold.
+- Linear fit does two fits, on the whole time series and the moving average of the time series. They are compared for better fit to each other and the user specified thresholds.
+- Power Spectral Density can be in raw power or decibles per hertz
+- Linear Baseline now takes a user specified time segment as the representitive baseline instead of the first 0.1 seconds.
+- Burst Area is now a setting instead of a seperate block.
+
 Beta 1.1: 02-27-2015
 
 Minor bug fixes:
