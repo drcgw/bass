@@ -6,8 +6,6 @@ Enthought’s distribution of Python (Canopy): https://store.enthought.com/
 
 Make sure that all *.py files are located in the same folder as the ipython notebooks.
 
-
-
 Follow the steps in order to analyze your data. Check out [Requirements](https://github.com/drcgw/bass/wiki/Requirements) to make sure your system can run this notebook.
 
 #Open ipython notebook:
@@ -26,21 +24,20 @@ Follow the steps in order to analyze your data. Check out [Requirements](https:/
 
 To run code blocks, click on the block then press the play button at the top of the page OR hit `Shift + Enter`. For some functions, you will not have to type directly in the code boxes. Instead, you will be prompted to type in boxes that appear after you run a block. If you do need to type into code boxes, it will be to change variables. To change strings, which look like:
 
-  	`key = ‘Mean1’`
-  	`meas = 'Intervals'`
-	
+    key = 'Mean1'
+    meas = 'Intervals'
+  
 change *ONLY* the word(s) on the right of the equal sign. These **MUST** have quotes around them, or the code will not run.
 To change numbers, which look like:
 
-	`Settings[‘VLF’] = 0.4`
-	`window= 256`
+  Settings[‘VLF’] = 0.4
+  window= 256
 
 change only the number to the right of the equal sign. Do not put quotes around them.
 Blocks of code are identified here by the header above them. There are also helpful boxes that contain instructions embedded in the notebook.
 
-
 ##Initialize
-  	
+    
 1. Run this block of code. It only needs to be run once at the beginning of each session.
 
 2. If the initialization worked, `BASS ready!` will print below this box.
@@ -53,28 +50,26 @@ Blocks of code are identified here by the header above them. There are also help
 1. Run this block of code. You will be prompted to enter the loading information. This block is required.
 
 2. Designate the path to your file to load. This does not include the file itself.
-  	
-  	Mac OSX Example: '/Users/MYNAME/Documents/bass'
-  	Microsoft Example: 'C:\\Users\MYNAME\Documents\bass'
-
+````
+  Mac OSX Example: '/Users/MYNAME/Documents/bass'
+  Microsoft Example: 'C:\\Users\MYNAME\Documents\bass'
+````
 3. Enter the name of the file, including the file type. This file should be a tab delimited text file with no header. Time must be the first column and in seconds.
-  	
-  	Example: ‘rat34_ECG.txt’
-
+````    
+  Example: ‘rat34_ECG.txt’
+````
 4. Designate the location of the folder where you would like the folder containing your results to go. If the folder does not exist, then it will be created. All .csv output will be saved into this folder. A plots folder, called 'plots' will be created inside this folder for you if it does not already exist. All line plots that are saved automatically will be put in this folder. Results from later event analyses will be in subfolders within this folder.
-
-  	Mac OSX Example: '/Users/MYNAME/Documents/output'
-  	Microsoft Example: 'C:\\Users\MYNAME\Documents\output'
-
+````
+  Mac OSX Example: '/Users/MYNAME/Documents/output'
+  Microsoft Example: 'C:\\Users\MYNAME\Documents\output'
+````
 5. When the data is loaded, the notebook will print
-  	
-	```
-	Made plots folder
-  	Data Loaded
-	Sampling Rate = #####(sec/frame)
-	FILENAME.txt is ### seconds long.
-	```
-
+````
+    Made plots folder
+    Data Loaded
+    Sampling Rate = #####(sec/frame)
+    FILENAME.txt is ### seconds long.
+````
 6. **Tips**: You can right-click on a file and select properties to get the full file path, then copy and paste it into these prompts.
 
 7. **Troubleshooting**: You are sure that the file path you gave is correct, but it throws and error saying that the file doesn’t exist. Make sure that you included the file type in the file name and that it doesn’t accidentally have the extension twice (‘rat34_ECG.txt.txt’). You should also make sure that your slashes are going the correct way for your operating system.
@@ -88,20 +83,34 @@ Blocks of code are identified here by the header above them. There are also help
 #Power Spectral Density (Optional)
  
 1. Optional code block: Set frequency bands to calculate the area under the curve, with output of raw power. There are 4 bands total.  To change/set each band, type the upper limit for each band in the code box to the right of the equal side. Choose values based on your data. Given values are for demonstration only, not intended to be defaults. Ex:
-
-	`Settings [‘PSD-Signal’] [‘ULF’] = 100`.
- 
+````
+    Settings [‘PSD-Signal’] [‘ULF’] = 100
+```` 
 2. In the next block, type `‘raw’` or `‘dB’` to change the scale of the PSD graph to raw Power or decibels/Hz. Run the block.
-
-	
-	`scale = ‘raw’` 
-
+````  
+    scale = ‘raw’
+````
 3. The PSD graph will launch. This graph is saved automatically in the PSD-Signal subfolder.
 
 4. If power in bands was set, then the power in bands will print when the graph is closed. This table will be automatically saved in the PSD-Signal subfolder as `FILENAME_PSD_Signal.csv`, where file name is the name of the uploaded data file.
 
 5. Use this information to determine the low cut and high cut for the band-pass filter, if needed.
- 
+
+![dB signal PSD](http://i.imgur.com/o1p1Syd.png) 
+PSD in dB/Hz from example `rat34_ECG.txt`.
+
+![Raw power PSD](http://i.imgur.com/Wx3QD1C.png)
+PSD in raw power from example `rat34_ECG.txt`.
+
+Settings used:
+
+````
+Settings['PSD-Signal']['ULF'] = 25 
+Settings['PSD-Signal']['VLF'] = 75 
+Settings['PSD-Signal']['LF'] = 150 
+Settings['PSD-Signal']['HF'] = 300 
+Settings['PSD-Signal']['dx'] = 2
+````
 ##Spectrogram
  
 1. Run this block to launch the spectrogram of the raw data. This block can take some time to run, so be patient with it. The y-axis autoscales so that only ‘active’ frequencies with power greater than 0.0000001 are displayed. the color bar is autoscaled to the minimum and maximum of the given spectrum.
@@ -109,6 +118,9 @@ Blocks of code are identified here by the header above them. There are also help
 2. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html
 
 3. Use this information to determine the low cut and high cut for you band-pass filter, if you need it.
+
+![Spectrogram](http://i.imgur.com/ZC0ZUSo.png)
+Spectrogram of raw timeseries from example `rat34_ECG.txt`.
 
 #Transforming Data
 
@@ -118,13 +130,13 @@ Blocks of code are identified here by the header above them. There are also help
 
 ##Load settings from a file
 
-0. if you want to load a previously outputted BASS settings file, use this block. if you have never used BASS before, then skip to the next section to enter your own settings. This file is created using `Save Files/Tables` at the end of an analysis. The name of this file can be changed, but it must have been generated in BASS.
+0. If you want to load a previously outputted BASS settings file, use this block. if you have never used BASS before, then skip to the next section to enter your own settings. This file is created using `Save Files/Tables` at the end of an analysis. The name of this file can be changed, but it must have been generated in BASS.
 
 1. Run this block of code, you will be prompted to enter the full file path and file name. Expected format is '.csv’, but the file name can be changed to anything.
-
-  	Mac OSX Example: '/Users/MYNAME/Documents/rat34_Settings.csv'
-  	Microsoft Example: 'C:\\Users\MYNAME\Documents\rat34_Settings.csv'
-
+````
+    Mac OSX Example: '/Users/MYNAME/Documents/rat34_Settings.csv'
+    Microsoft Example: 'C:\\Users\MYNAME\Documents\rat34_Settings.csv'
+````
 2. The settings will be displayed in the table below. You do not need to use any of the `Set Settings` blocks if you do not need to change a parameter.
 
 ##Enter your settings for data transformation
@@ -132,6 +144,8 @@ Blocks of code are identified here by the header above them. There are also help
 0. If you loaded settings from a file, you can skip this step. HOWEVER, you must do one or the other. there are no defaults.
 
 1. Run this block of code. You will be prompted to Enter values for different transformation and filtering settings. Choose which of these is right for your dataset.
+
+2. You can rerun this block of code as many times as you need as you adjust your settings.
 
 ###Linear Fit
 
@@ -147,7 +161,7 @@ Linear fit is used to detrend linear data. It does this by generating a best fit
 
 `Relative Baseline:` Enter the amplitude value of the baseline for this data, if it is known. Otherwise, put 0. This value will shift your data such that the baseline is at this number.
 
-*FIGURE 1* See figure at https://github.com/drcgw/bass/wiki/Tutorial#transform-data
+![Linear Subtraction Algorithm](http://i.imgur.com/0IuEoit.jpg)
 
 Figure 1) Linear Fit Algorithm: Shows an example of the two best fit lines that this function generates. Linear fit (Red) is made by fitting the Data (Black) and its pearson r value is 0.85. Rolling linear fit (Green) is made by fitting the moving/rolling average (Blue) and its pearson r value is 0.85. The user specified that the `linear fit r threshold` and `rolling linear fit r threshold` are 0.9. Only Rolling linear fit has an r value greater than or equal to the threshold, so it is used to do the subtraction (Green Arrow). The resulting data is detrended with a slope of zero.
 
@@ -160,14 +174,13 @@ Figure 1) Linear Fit Algorithm: Shows an example of the two best fit lines that 
 
 `Savitzky Golay Settings (window, polynomial): `Enter values for the window size and polynomial order separated by commas. If you don't want to use this filter, enter `none`. Window size must be odd. Polynomial order must be greater than 3. Absolute Value must have been `True`. The units for window size are indices, not seconds.
 
-  	a. This filter smooths out data while still preserving events/peaks. Ex) `301, 4`.
+* This filter smooths out data while still preserving events/peaks. Ex) `301, 4`.
 
-  	b. If the data is too coarse/not smooth enough, increase the window size. If the data is too smooth or events have vanished, decrease the window size. Note: window must be an odd integer, polynomial - integer greater than 3. 
+* If the data is too coarse/not smooth enough, increase the window size. If the data is too smooth or events have vanished, decrease the window size. Note: window must be an odd integer, polynomial - integer greater than 3. 
 
 ###Absolute Value. 
 Enter `True` or `False` to use this function. If you are using the Savitsky-Golay Filter, then this function will automatically be set to `True`.
 
-6. You can rerun this block of code as many times as you need as you adjust your settings.
 
 ##Run data transformation
 
@@ -193,19 +206,17 @@ The purpose of this block is to detect and generate a baseline of your data. Thi
 ###Linear
 Linear takes a user specified segment of time as a representative baseline. it then normalizes the data by shifting it such that the baseline is now zero. Use the graph generated from the transformation settings to figure out a good time segment.
 
-`Start (seconds)`input the time in seconds at the beginning of the baseline sample.  
+`Start (seconds): `input the time in seconds at the beginning of the baseline sample.  
 
-`End (seconds)`		-input the time in seconds at the end of the baseline sample.
+`End (seconds):` input the time in seconds at the end of the baseline sample.
 
 ###Rolling 
 Rolling uses a window to take a moving average of the data to use as the moving baseline. Does not shift or normalize the data.
 
-`Window size in seconds:`input the number of milliseconds (must be an EVEN number)of the rolling average window.Note: smaller window = finer average, more sensitive baseline.
+`Window size in seconds:` input the number of milliseconds (must be an EVEN number)of the rolling average window.Note: smaller window = finer average, more sensitive baseline.
 
 ###Static
-Actually skips the generation of a baseline and allows you to choose an arbitrary y value for threshold. No Shift in the data.
-		-No baseline, not relative to anything in the signal.
-
+Actually skips the generation of a baseline and allows you to choose an arbitrary y value for threshold. No Shift in the data. No baseline, not relative to anything in the signal. This is useful if you know exactly where you want your threshold to be, but don't want to fiddle with the above settings to get the baseline just right as a function of your signal.
 
 ##Run baseline
 
@@ -218,7 +229,7 @@ Actually skips the generation of a baseline and allows you to choose an arbitrar
 
 #Display Settings
 
-0. Use this block at any time to display all of the current settings.
+1. Use this block at any time to display all of the current settings.
 
 #Event Detection
 
@@ -228,16 +239,15 @@ Actually skips the generation of a baseline and allows you to choose an arbitrar
 
 ###Delta
 
-`Enter delta value between # and #:` choose a delta value within the given range. This range is based on the difference between the largest and smallest amplitude values in a given data set. Delta is the minimum difference between a peak and the valley on either side of it. Generally speaking, a small delta value means more/smaller peaks will be detected. A large delta value means fewer/larger peaks will be detected.
+`Enter delta value between # and #:` choose a delta value within the given range. This range is based on the difference between the largest and smallest amplitude values in a given data set. Delta is the minimum difference between a peak and the valley on either side of it. Generally speaking, a small delta value means more/smaller peaks will be detected. A large delta value means fewer/larger peaks will be detected. For the sample data `rat34_ECG.txt`, `0.25` was used.
 
 ###Peak Minimum
 
-`Enter Peak Minimum value between # and #: ` enter the minimum amplitude of acceptable peaks. this will filter out any peaks that are not tall enough to be included in your results. This is relative amplitude based on the range of your data set.
+`Enter Peak Minimum value between # and #: ` enter the minimum amplitude of acceptable peaks. this will filter out any peaks that are not tall enough to be included in your results. This is relative amplitude based on the range of your data set. For the sample data `rat34_ECG.txt`, `0` was used.
 
 ###Peak Maximum
 
-`Enter Peak Maximum value between # and #: ` enter the maximum amplitude of acceptable peaks. this will filter out any peaks that are too tall to be included in your results. This is relative amplitude based on the range of your data set.
-
+`Enter Peak Maximum value between # and #: ` enter the maximum amplitude of acceptable peaks. this will filter out any peaks that are too tall to be included in your results. This is relative amplitude based on the range of your data set. For the sample data `rat34_ECG.txt`, `0.7` was used.
 
 ##Run Event Peak Detection
 
@@ -263,32 +273,33 @@ Actually skips the generation of a baseline and allows you to choose an arbitrar
 
 `Enter a threshold value between # and #: ` Enter a number that is between the given range. The formula for this value is determined by your baseline method: 
 
-  	a. **Linear** This value is a proportion of the baseline number. The number entered is multiplied by the baseline value. Remember that the data is normalized so that entering 0 gives a threshold equal to 0.-Ex) Baseline is equal to 5. A threshold value of 1.0 means that the actual value is 5. A threshold value of 0.5 is an actual threshold of 2.5. 
+* **Linear** This value is a proportion of the baseline number. The number entered is multiplied by the baseline value. Remember that the data is normalized so that entering 0 gives a threshold equal to 0.-Ex) Baseline is equal to 5. A threshold value of 1.0 means that the actual value is 5. A threshold value of 0.5 is an actual threshold of 2.5. 
 
-  	b. **Rolling** The baseline is calculated at each time point when using the rolling baseline. The threshold is the amount added to the baseline.  Ex) Baseline is equal to 5. A threshold value of 1.0 means that the actual value is 6. A threshold value of 0.5 is an actual threshold of 5.5.
-	c. **Static** No baseline was created, so the threshold value is the literal threshold value used to determine bursting. Ex) Threshold value of 1 means that the amplitude must be greater than 1 to be considered an event.
+* **Rolling** The baseline is calculated at each time point when using the rolling baseline. The threshold is the amount added to the baseline.  Ex) Baseline is equal to 5. A threshold value of 1.0 means that the actual value is 6. A threshold value of 0.5 is an actual threshold of 5.5.
+
+* **Static** No baseline was created, so the threshold value is the literal threshold value used to determine bursting. Ex) Threshold value of 1 means that the amplitude must be greater than 1 to be considered an event.
 
 ##Minimum Interevent Interval
-`Enter the minimum inter-event interval in seconds: `This value is the minimum distance two events can be from each other. If two events are closer together than this limit, then they are combined into one event.
+`Enter the minimum inter-event interval in seconds: `This value is the minimum distance two events can be from each other. If two events are closer together than this limit, then they are combined into one event. For the sample data `rat34_ECG.txt`, `0.01` was used.
 
 ##Minimum burst duration
 
-`Enter the minimum burst duration in seconds: ` Filter events such that no events less than this duration are included.
+`Enter the minimum burst duration in seconds: ` Filter events such that no events less than this duration are included. For the sample data `rat34_ECG.txt`, `0` was used.
 
 ##Maximum burst duration
 
-`Enter the maximum burst duration in seconds: ` Filter events such that no events greater than this duration are included.
+`Enter the maximum burst duration in seconds: ` Filter events such that no events greater than this duration are included. For the sample data `rat34_ECG.txt`, `10` was used.
 
 ##Minimum peaks per burst
 
-`Enter the minimum number of peaks per burst: ` Filter events such that busts much have at least this number of peaks (or more). If bursts can have any number of peaks, enter 0.
+`Enter the minimum number of peaks per burst: ` Filter events such that busts much have at least this number of peaks (or more). If bursts can have any number of peaks, enter 0. For the sample data `rat34_ECG.txt`, `0` was used.
 
 ##Burst Area
 
-`Do you want to calculate Burst Area? (True/False): ` Enter True or False to toggle calculating the area under the curve for each burst. This can take a while if there are many bursts or the bursts are large.
+`Do you want to calculate Burst Area? (True/False): ` Enter True or False to toggle calculating the area under the curve for each burst. This can take a while if there are many bursts or the bursts are large. For the sample data `rat34_ECG.txt`, `False` was used.
 
 ##Edge Events
-`Do you want to Exclude Edges? (True/False): ` Enter True if you do not want to include events on the edge. Enter False if you want to include them. Sometimes, a data file starts or ends during an event. Use this feature to handle this case.
+`Do you want to Exclude Edges? (True/False): ` Enter True if you do not want to include events on the edge. Enter False if you want to include them. Sometimes, a data file starts or ends during an event. Use this feature to handle this case. For the sample data `rat34_ECG.txt`, `True` was used.
 
 ##Run Event Burst Detection
 
@@ -321,15 +332,23 @@ Many analyses require that you specify which data column and measurement you wan
 
 `meas`: which of the available measurements for either Peaks or Bursts to do analysis on. Some functions support ‘all’, which will loop through all available measurements for a given event type. The measurement name must EXACTLY match the column name in the results tables. For convinces, you can copy and paste the measurement names from the summary print statement from the `Save all files and settings` block.
 
+`version`: Which version of the time series you'd like to use. 'original' and 'trans' are always an option. If you are using linear for baseline, 'shift' is also an option. if you are using rolling for baseline, 'rolling' is also an option.
+
 #Results Plots
 
 ##Poincare Plots
 
 0. Poincare (also called lag plots) are a way to show variability over time. A sequence is plotted in a scatter plot such that each successive pair of data points are the coordinates for each point in the plot. 
 
+![Peak to Peak intervals](http://i.imgur.com/fPddV4q.png)
+Peak to peak intervals from example `rat34_ECG.txt` file.
+
+![Burst Duration](http://i.imgur.com/5aQ0B3N.png)
+Burst duration from example `rat34_ECG.txt` file.
+
 ###Batch Poincare
 
-1.Specify event_type (Peaks or Bursts) and meas. mess = ‘all’ is supported for this function.
+1. Specify event_type (Peaks or Bursts) and meas. mess = ‘all’ is supported for this function.
 
 2. Run the block. Figures, SD1 table, and SD2 table are saved automatically in the `Poincare` subfolder. 
 
@@ -338,14 +357,13 @@ Many analyses require that you specify which data column and measurement you wan
 1. Specify event_type (Peaks or Bursts), meas, and key. In single wave, ‘Mean1’ is default key. 
 
 For heart rate variability:
-
-	```
-	event_type = 'Bursts'
-	meas = 'Total Cycle Time'
-	
-	event_type = Peaks
-	meas = 'Intervals'
-	```
+````
+  event_type = 'Bursts'
+  meas = 'Total Cycle Time'
+  
+  event_type = Peaks
+  meas = 'Intervals'
+````
 
 2. Run block to pop-up the plot. Plot can be saved using the save icon in the plot pop-up. X axis is n, Y axis is n+1. The red ellipse shows the the average spread of the points. 
 
@@ -354,56 +372,75 @@ For heart rate variability:
 ##Line plots
 
 1. Specify key, start time, and end time. In single wave, ‘Mean1’ is default key. Ex)
-	
-	key = 'Mean1'
-	start =100 
-	end= 101
-
+````  
+  key = 'Mean1'
+  start =100 
+  end= 101
+````
 2. Run this block of code to generate a two panel graph of the raw wave and analyzed wave. You can pan and zoom as needed. The x axis is shared, so all panning and zooming affects both subgraphs.
 
 3. Plots can be saved using the save icon in the plot pop-up.
+![line graph example](http://i.imgur.com/G9lV5ht.png)
+Example of a results line graph with raw signal (top) and transformed signal with events detected (bottom) from example file `rat34_ECG.txt`,
 
 ##Autocorrelation
 
 1. Specify key, start time, and end time. In single wave, ‘Mean1’ is default key. This function can take a LONG time to run, so be cautious when running long segments of data. Ex)
-	
-	key = 'Mean1'
-	start = 0 
-	end = 10
-
+``` 
+  key = 'Mean1'
+  start = 0 
+  end = 10
+```
 2. Run this block of code to generate an autocorrelation plot.
 
 3. Plots can be saved using the save icon in the plot pop-up.
 
+![Autocorrelation Plot](http://i.imgur.com/RjZ3dpr.png)
+An autocorrelation plot of the first 10 seconds of data from example file `rat34_ECG.txt`.
+
 ##Frequency Plot
 
 1. Specify event_type (Peaks or Bursts), meas, and key. In single wave, ‘Mean1’ is default key. Ex)
-	
-	event_type = 'Peaks'
-	meas = 'Intervals'
-	key = 'Mean1'
-
+````  
+  event_type = 'Peaks'
+  meas = 'Intervals'
+  key = 'Mean1'
+````
 2. Run this block to plot the frequency of events (detected with peak detect) in events/min.
 
 3. You can save this plot by clicking on the save icon. For more information on how to use the interactive plot windows: http://matplotlib.org/users/navigation_toolbar.html
 
-#Power Spectral Density
+![Frequency plot](http://i.imgur.com/wYH2mMA.png)
+Frequency of peaks from example file `rat34_ECG.txt`.
 
+#Power Spectral Density
 
 The following blocks allows you to asses the power of event measurements in the frequency domain. While you can call this block on any event measurement, it is intended to be used on interval data (or at least data with units in seconds). Recommended:
 
-	```
-	event_type = 'Bursts'
-	meas = 'Total Cycle Time'
-	key = 'Mean1'
+  ```
+  event_type = 'Bursts'
+  meas = 'Total Cycle Time'
+  key = 'Mean1'
 
-	event_type = 'Peaks'
-	meas = 'Intervals'
-	key = 'Mean1'
-	```
+  event_type = 'Peaks'
+  meas = 'Intervals'
+  key = 'Mean1'
+  ```
 
 Because this data is in the frequency domain, we must interpolate it in order to perform a FFT on it.
 
+![PSD Of Bursts Total Cycle Time](http://i.imgur.com/qEZmEOe.png)
+Raw power of interpolated bursts total cycle time from example file `rat34_ECG.txt`.
+Settings used:
+
+````
+Settings['PSD-Event']['hz'] = 4.0
+Settings['PSD-Event']['ULF'] = 0.03 
+Settings['PSD-Event']['VLF'] = 0.05 
+Settings['PSD-Event']['LF'] = 0.15 
+Settings['PSD-Event']['HF'] = 0.4 
+Settings['PSD-Event']['dx'] = 10
+````
 
 ##Settings
 Set frequency bands to calculate the area under the curve and interpolation frequency. To do this, type the value for each in the code box to the right of the equal side. Ex: 
@@ -416,7 +453,7 @@ event_type = 'Peaks'
 meas = 'Intervals'
 key = 'Mean1'
 scale = 'raw’
-	```
+```
 3. Run the block. The PSD graph will launch.
 
 4. The power in bands will print when the graph is closed. This table will be automatically saved in the output folder as out as a `FILENAME_PSD_Events.csv`, where file name is the name of the uploaded data file.
@@ -424,10 +461,10 @@ scale = 'raw’
 #Analyze Events by Measurement
 
 1. Specify event type (Peaks or Bursts) and measurement. meas = ‘all’ is not supported. Ex)
-
+````
     event_type = 'peaks'
     meas = 'Peaks Amplitude'
-
+````
 2. Run this block to generate a line graph with error bars. This is really intended for use with multiple columns of data. 
 
 3. Save this graph using the save icon in the pop up window.
@@ -441,13 +478,16 @@ scale = 'raw’
 #HistEntropy
 
 1.Specify event type (Bursts or peaks) and measurement type. This function supports ‘all’. Ex)
-	
-	event_type = 'Bursts'
-	meas = 'all'
+  
+  event_type = 'Bursts'
+  meas = 'all'
 
-2. Run the block to generate the histogram and histogram entropy measurment. The figure and table is saved out automatically. 
+2. Run the block to generate the histogram and histogram entropy measurement. The figure and table is saved out automatically. 
 
-3. If all of the samples fall in one bin regardless of the bin size, it means we have the most predictable situation and the entropy is 0. If we have uniformly dist function, the max entropy will be 1.
+3. If all of the samples fall in one bin regardless of the bin size, it means we have the most predictable situation and the entropy is 0. If we have uniformly distribution function, the max entropy will be 1.
+
+![TCT histogram](http://i.imgur.com/BYVizEi.png)
+Histogram of Bursts Total Cycle Time from example file `rat34_ECG.txt`.
 
 #STOP HERE
 
@@ -469,18 +509,18 @@ scale = 'raw’
 0. This block require PyEEG to be in your folder with the notebook. It is not distributed in Canopy.
 
 1. This code has the preset values for M and R.
-
-`M = 2`  
-`R = 0.2*std(measurement)`
-
+````
+M = 2
+R = 0.2*std(measurement)
+````
 2. You can run this for time series data (any version) or any measurement. Note that this code can run slowly, especially for large files.
  
 ##Events
 
 1.Specify event type (Bursts or peaks) and measurement type. This function supports ‘all’. Ex)
-	
-	event_type = 'Bursts'
-	meas = 'all' 
+  
+  event_type = 'Bursts'
+  meas = 'all' 
 
 2. Run this block of code. Approximate entropy values saved automatically in the `Approximate Entropy` subfolder.
 
@@ -489,12 +529,12 @@ scale = 'raw’
 ##Time Series
 
 1. Specify version of time series (‘original’, ‘trans’, ’shift’, or ‘rolling’), key, start time and end time (time is in seconds). In the single wave analysis, the default is ‘Mean1’ Ex:
-
-	version = 'original' 
-	key = 'Mean1' 
-	start = 0 
-	end = 1
-
+````
+  version = 'original' 
+  key = 'Mean1' 
+  start = 0 
+  end = 1
+````
 2. run the block. Entropy value is printed in the notebook. Not saved out automatically.
 
 Sample Entropy
@@ -502,37 +542,52 @@ Sample Entropy
 0. This block require PyEEG to be in your folder with the notebook. It is not distributed in Canopy.
 
 1. This code has the preset values for M and R.
-
-`M = 2`  
-`R = 0.2*std(measurement)`
-
+````
+M = 2
+R = 0.2*std(measurement)
+````
 2. You can run this for time series data (any version) or any measurement. Note that this code can run slowly, especially for large files.
  
 ##Events
 
 1.Specify event type (Bursts or peaks) and measurement type. This function supports ‘all’. Ex)
-	
-	event_type = 'Bursts'
-	meas = 'all' 
+  
+  event_type = 'Bursts'
+  meas = 'all' 
 
 2. Run this block of code. Sample entropy values saved automatically in the `Sample Entropy` subfolder.
 
 ##Time Series
 
 1. Specify version of time series (‘original’, ‘trans’, ’shift’, or ‘rolling’; depending on your thresholding settings), key, start time and end time (time is in seconds). In the single wave analysis, the default is ‘Mean1’ Ex:
-
-	version = 'original' 
-	key = 'Mean1' 
-	start = 0 
-	end = 1
-
+````
+  version = 'original' 
+  key = 'Mean1' 
+  start = 0 
+  end = 1
+````
 2. Run the block. Entropy value is printed in the notebook. Not saved out automatically.
 
 ##Blank Code Block
 
 1. Down here, at the bottom, is where you can explore yourself. I'm surprised you kept reading up until this point. You must be a dedicated user as well as an advanced one.
 
-2. Type your own python right in here. Don't let anyone tell you different. Feel free to exploit PyEEG functions if you have that in your path. All the data you could want is stored as conveniently named things.
+2. Type your own python right in here. Don't let anyone tell you different. Feel free to exploit PyEEG, numpy, and scipy functions. All the data you could want is stored as conveniently named things (Check out that sweet source code for that, more on this coming soon).
 
 3. Best of Luck!
 
+4. For **help** on any function, you can type any function with these to pull up their documentation:
+
+    help(graph_ts)
+    event_peakdet?
+
+Click here to watch my archived video tutorial for SWAN, the precursor for BASS:
+[![Video Tutorial](http://img.youtube.com/vi/9ztWIjXN-3k/0.jpg)](http://www.youtube.com/watch?v=9ztWIjXN-3k)
+
+An updated video is coming soon.
+
+#Help support us!
+
+Please donate so we can keep working on this project:
+
+**PAYPAL LINK**

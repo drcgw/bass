@@ -3058,7 +3058,7 @@ def psd_event(event_type, meas, key, scale, Data, Settings, Results):
     else:
         plt.plot(Fxx, Pxx)
         plt.ylabel(r"PSD $(s^2$/Hz)")
-        plt.title(r"Welch's PSD of %s in (s^2/Hz)" %(key))
+        plt.title(r"Welch's PSD of %s- %s in (s^2/Hz)" %(meas, key))
     
     plt.xlabel("Frequency (Hz)")
     
