@@ -1,41 +1,41 @@
-SWAN
+BASS
 ====
 
-This is the beta SWAN release from the Dr. Chris G Wilson Neuro-Physiology lab. 
-SWAN is the Single Wave Analysis Notebook. This interactive notebook is designed to analyize biomedical time series data, like ECG and Nerve recordings. 
+This is the Biomedical Analysis Software Suite (BASS) Python Module and accompanying IPython notebooks. Each notebook is a variant of a data analytics pipeline that detects and measure events within a time series. The underlying architecture makes it easy to customize the parts of your detection pipeline as well as pick from a menu of analysis options. 
 
-RELEASE log
-===
-Beta 1.1: 02-27-2015
+Basic Features
+-----------------
+Signal Processing: Detrending (linear subtraction), Bandpass filters, Savitzky-Golay Filter
 
-Minor bug fixes:
-- Critical error in rolling baseline calculation is now corrected.
-- Added links to the wiki in the notebook.
-- Added Error checking for Settings blocks.
+Event Detection: Peaks and boundaries (Bursts)
 
-Beta 1.0: 01-27-2015
+Event Measurements: Peak amplitude, Peak-Peak Intervals, Duration, Interburst interval, Total Cycle 
 
-New Features:
-- Load Settings Features 
-- Rolling baseline/thresholding 
+Time, Peaks per Burst, Intraburst Frequency, Burst Area, Attack, Decay.
 
-Updates:
-- Refactored the way all data is stored to safer dictionaries than top level varibles. 
-- If savitzky-golay is selected, absolute value is automaticaly turned on
-- Settings for event detection are now their own blocks, so they can be optionally run (esp in the case of data loaded in). 
-- Settings will display previously selected value, if present.
-- Histogram Entropy is now safely wrapped. 
-- Histogram Entropy data can now be saved. 
+Event Analysis: Descriptive Statistics, Histogram Entropy, Approximate Entropy, Sample entropy, Poincare Plots, Moving averages, Power Spectral Density, Frequency.
 
-Beta 0.2: 11-13-2014
+How to use
+--------------
+1. Install Python on yoru computer. I recommend the Enthought Canopy distribution. 
 
-New Features: 
-- Power in band for freqency plots, FFT graphs, and tables
-- Histogram Entropy
+2. Open a terminal window (Mac) or command prompt (cmd, Windows).
 
-Updates:
-- All line plots are now always the same amplitude
-- No longer asks for user to input sampling rate, SWAN checks for you
-- Fixed bug in gHRV outputs that exported the wrong rr-interval file.
+3. Type `ipython notebook` then press `Enter`.
 
-Pre-Beta: 10-16-2014
+4. The notebook should launch automatically in a web browser window. Make sure that the window is not internet explorer (chrome is ideal, firefox is fine). If the page doesn’t load, look for the line in the terminal window that reads: `The IPython Notebook is running at: http://###.#.#.#:8888/‘`. You can copy and paste the address into the address bar of your web browser.
+
+4. Do not launch from Canopy!
+
+5. Navigate through your folder tree to where you have saved the `Single Wave-Interactive.ipynb` file. Click on it to open it. The `bass.py` and `pyeeg.py` files MUST be in the same folder as the Ipython Notebooks.
+
+6. `Single Wave-Interactive.ipynb` is intended for new and basic users. `Single Wave-Basic.ipynb` is intended for advanced users or users who already know exactly what their analysis settings will be. `Kitchen Sink.ipynb` is intended for developers or superusers.
+
+How to Modify
+------------------
+Stay tuned, Developers. 
+
+Secret Tricks
+----------------
+Coming Soon
+

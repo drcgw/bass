@@ -1,49 +1,32 @@
-	Settings: 2015-01-23 19:10:41.824968
+	Settings: 2015-03-26 10:50:03.159483
 Absolute Value	True
 Bandpass Highcut	none
 Bandpass Lowcut	none
 Bandpass Polynomial	none
-Baseline Type	rolling
-Baseline rolling	"0.03750    0.050714
-0.03775    0.050712
-0.03800    0.050713
-0.03825    0.050717
-0.03850    0.050723
-0.03875    0.050732
-0.03900    0.050743
-0.03925    0.050756
-0.03950    0.050771
-0.03975    0.050788
-0.04000    0.050807
-0.04025    0.050828
-0.04050    0.050850
-0.04075    0.050875
-0.04100    0.050902
-...
-606.90875    0.329736
-606.90900    0.329024
-606.90925    0.328299
-606.90950    0.327560
-606.90975    0.326811
-606.91000    0.326050
-606.91025    0.325279
-606.91050    0.324499
-606.91075    0.323711
-606.91100    0.322915
-606.91125    0.322113
-606.91150    0.321306
-606.91175    0.320494
-606.91200    0.319680
-606.91225    0.318863
-Length: 2427500, dtype: float64"
-Delta	0.3
-Inter-event interval minimum (seconds)	0.1
+Baseline Type	static
+Burst Area	False
+Delta	0.25
+Exclude Edges	True
+File Type	Plain
+Generate Graphs	False
+Graph LCpro events	False
+Inter-event interval minimum (seconds)	0.01
+Label	rat34_ECG.txt
 Linear Fit	False
-Rolling Baseline Window	300
-Sample Folder	test
+Linear Fit-Rolling R	0.75
+Linear Fit-Rolling Window	1000
+Maximum Burst Duration (s)	10
+Milliseconds	False
+Minimum Burst Duration (s)	0
+Minimum Peak Number	1
+Output Folder	/Users/abigaildobyns/Desktop/demo
+Peak Maximum	0
+Peak Minimum	0.7
+Relative Baseline	0
+Rolling Baseline Window	none
 Sample Rate (s/frame)	0.00025
-Save Location	/Users/abigaildobyns/Desktop
 Savitzky-Golay Polynomial	4
 Savitzky-Golay Window Size	251
-Threshold	0.05
-Uploaded File Location	/Users/abigaildobyns/Desktop/rat34-ECG.txt
+Threshold	0.15
+folder	/Users/abigaildobyns/Desktop
+plots folder	/Users/abigaildobyns/Desktop/demo/plots
