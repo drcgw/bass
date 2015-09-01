@@ -140,9 +140,11 @@ def load_wrapper(Data, Settings):
             new_index.append('Roi'+str(Data['ROI parameters'].index[i])) #reformat name and append it to the empty index list
         Data['ROI parameters'].index = new_index
         Settings['Sample Rate (s/frame)'] = Data['original'].index[1] - Data['original'].index[0]
-        print 'Data Loaded'
+        frames = np.round(1/Settings['Sample Rate (s/frame)'])
+        Settings['Sample Rate (s/frame)'] = 1/float(frames)
+        print "Rounded Sampling Rate (s/frame): %s" %Settings['Sample Rate (s/frame)']
 
-        
+        print 'Data Loaded'
 
     #ImageJ
     elif Settings['File Type'] == 'ImageJ':
@@ -167,6 +169,10 @@ def load_wrapper(Data, Settings):
         print 'roi_loc parsed'
 
         Settings['Sample Rate (s/frame)'] = Data['original'].index[1] - Data['original'].index[0]
+        frames = np.round(1/Settings['Sample Rate (s/frame)'])
+        Settings['Sample Rate (s/frame)'] = 1/float(frames)
+        print "Rounded Sampling Rate (s/frame): %s" %Settings['Sample Rate (s/frame)']
+
         Settings['Graph LCpro events'] = False
         print 'Data Loaded'
 
@@ -181,6 +187,10 @@ def load_wrapper(Data, Settings):
         Data['original'] = data
         Settings['Graph LCpro events'] = False
         Settings['Sample Rate (s/frame)'] = Data['original'].index[1] - Data['original'].index[0]
+        frames = np.round(1/Settings['Sample Rate (s/frame)'])
+        Settings['Sample Rate (s/frame)'] = 1/float(frames)
+        print "Rounded Sampling Rate (s/frame): %s" %Settings['Sample Rate (s/frame)']
+
         print 'Data Loaded'
 
     #Plain text, no headers, col[0] is time in seconds
@@ -202,7 +212,10 @@ def load_wrapper(Data, Settings):
         Data['original'] = data
         print 'Data Loaded'
         Settings['Sample Rate (s/frame)'] = Data['original'].index[1] - Data['original'].index[0]
-        print 'Sampling Rate= %s (sec/frame)' %(Settings['Sample Rate (s/frame)'])
+        frames = np.round(1/Settings['Sample Rate (s/frame)'])
+        Settings['Sample Rate (s/frame)'] = 1/float(frames)
+        print "Rounded Sampling Rate (s/frame): %s" %Settings['Sample Rate (s/frame)']
+
         length = Data['original'].index[-1] - Data['original'].index[0]
         print '%s is %s seconds long.' %(Settings['Label'], length)
         Settings['Graph LCpro events'] = False
@@ -235,6 +248,10 @@ def load_wrapper(Data, Settings):
         Data['original'] = data
         print 'Data Loaded'
         Settings['Sample Rate (s/frame)'] = Data['original'].index[1] - Data['original'].index[0]
+        
+        frames = np.round(1/Settings['Sample Rate (s/frame)'])
+        Settings['Sample Rate (s/frame)'] = 1/float(frames)
+        print "Rounded Sampling Rate (s/frame): %s" %Settings['Sample Rate (s/frame)']
         Settings['Graph LCpro events'] = False
     else:
         raise ValueError('Not an acceptable file type')
@@ -1531,6 +1548,7 @@ def event_peakdet(Data, Settings, Results, roi):
             
             #filter results
             results_peaks = results_peaks[results_peaks['Peaks Amplitude']>Settings['Peak Minimum']]
+            results_peaks = results_peaks[results_peaks['Peaks Amplitude']<=Settings['Peak Maximum']]
             
             if results_peaks.empty == True:
                 failure = True
