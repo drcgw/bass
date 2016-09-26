@@ -69,6 +69,8 @@ from pandas import Series, DataFrame
 import pandas as pd
 from pandas.tools.plotting import autocorrelation_plot
 
+import h5py as h5
+
 import time as t
 import datetime
 import sys
@@ -80,8 +82,15 @@ from matplotlib import cbook
 from PIL import Image
 
 
-
-
+#New decorator function that allows a list of dataset objects to be passed into a function and runs the function once for each object in the list
+def iterate_data_decorator(func):
+    def func_wrapper(stuff):
+    	try:
+			for i in range(0,len(stuff)):
+				func(stuff[i])
+    	except:
+			func(stuff)
+    return func_wrapper
 
 #
 #Upload
@@ -112,7 +121,7 @@ def load_wrapper(Data, Settings):
     -----
     Add new file loaders at the end of the function by setting up your own gate. 
     """
-
+    
     #make output folder if it does not exist
     mkdir_p(Settings['Output Folder'])
 
@@ -193,14 +202,23 @@ def load_wrapper(Data, Settings):
 
         print 'Data Loaded'
 
-    #Plain text, no headers, col[0] is time in seconds
+    #Plain text, skips over headers, col[0] is time in seconds
     elif Settings['File Type'] == 'Plain':
         try:
+            i = 0
+            while unicode(pd.read_csv('%s/%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
+                               index_col=False, header=None, skiprows=i,nrows=1)[0][0]).isnumeric() ==False:
+                i += 1
             data = pd.read_csv('%s/%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
-                               index_col= 0, header=None)
+                               index_col= 0, header=None, skiprows = i)
         except:
+            i = 0
+            while unicode(pd.read_csv('%s\%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
+                               index_col=False, header=None, skiprows=i,nrows=1)[0][0]).isnumeric() ==False:
+                i += 1
             data = pd.read_csv('%s\%s' %(Settings['folder'], Settings['Label']), sep = '\t', 
-                               index_col= 0, header=None)
+                               index_col= 0, header=None, skiprows = i)
+            
         data.index.name = 'Time(s)'
 
         new_cols = []
@@ -219,8 +237,54 @@ def load_wrapper(Data, Settings):
         length = Data['original'].index[-1] - Data['original'].index[0]
         print '%s is %s seconds long.' %(Settings['Label'], length)
         Settings['Graph LCpro events'] = False
+        
+	#HDF5, from RTXI, time in ms
+    elif Settings['File Type'] == 'HDF5':
+		Settings['HDF Key'] = raw_input('HDF Key: ')
+		Settings['HDF Channel'] = raw_input('HDF Channel (starting at 1): ')
+		chan = int(Settings['HDF Channel']) #HDF channel must be retrieved as type int
+		def getData(f):
+			meta = [item for item in f[Settings['HDF Key']]]
+			headers = [item.split(": ", 1)[1] for item in meta[:(len(meta)-1)]]
+			try:
+				data = f[Settings['HDF Key'] + str(meta[len(meta)-1])] #Retrieve ordinate values
+			except:
+				data = f[Settings['HDF Key'] + '/' + str(meta[len(meta)-1])] #Retrieve ordinate values
+			dframe = pd.DataFrame(data=np.vstack(data), columns=headers) #Construct dataframe
+			for i in headers:
+				if i != headers[chan-1]:
+					del dframe[i]
+			dframe["Time (ms)"] = range(0, len(dframe)) #Establish abscissa
+			return dframe
+		
+		try:
+			hdf = h5.File('%s/%s' %(Settings['folder'], Settings['Label']), 'r')
+		except:
+			hdf = h5.File('%s\%s' %(Settings['folder'], Settings['Label']), 'r')
+			
+		data = getData(hdf)
+		hdf.close()
+		
+		data.index.name = 'Time(ms)'
 
+		new_cols = []
 
+		for i in np.arange(len(data.columns)):
+			new_cols.append('Mean'+str(data.columns[i]))
+		data.columns = new_cols
+		
+		Data['original'] = data
+		print 'Data Loaded'
+		Settings['Sample Rate (s/frame)'] = Data['original'].index[1] - Data['original'].index[0]
+		frames = np.round(1/Settings['Sample Rate (s/frame)'])
+		Settings['Sample Rate (s/frame)'] = 1/float(frames)
+		print "Rounded Sampling Rate (s/frame): %s" %Settings['Sample Rate (s/frame)']
+
+		length = Data['original'].index[-1] - Data['original'].index[0]
+		print '%s is %s seconds long.' %(Settings['Label'], length)
+		Settings['Graph LCpro events'] = False
+
+	#Old morgan data in milliseconds
     elif Settings['File Type'] == 'Morgan':
         try:
             data = pd.read_csv('%s/%s' %(Settings['folder'], Settings['Label']), sep = ',', 
@@ -230,7 +294,6 @@ def load_wrapper(Data, Settings):
                                index_col= 0)
         data.index.name = 'Time(s)'
 
-        #Old morgan data in milliseconds
         new_index = []
         for i in data.index:
             i = round(i, 4)
@@ -255,6 +318,7 @@ def load_wrapper(Data, Settings):
         Settings['Graph LCpro events'] = False
     else:
         raise ValueError('Not an acceptable file type')
+	
     return Data, Settings
 
 def load_interact():
@@ -356,12 +420,13 @@ def load_settings(Settings):
     Settings['Settings File'] = '~/Users/me/Neuron Modeling/data/IP0_9/Settings.csv'
     Settings = load_settings(Settings)
     """
-
+    
     settings_temp = pd.read_csv(Settings['Settings File'], index_col=0, header=0, sep=',')
+	
     exclusion_list = ['plots folder', 'folder', 
                       'Sample Rate (s/frame)', 'Output Folder', 
-                      'Baseline', 'Baseline-Rolling', 'Settings File', 'Milliseconds',
-                      'Label', 'File Type']
+                      'Baseline', 'Baseline-Rolling', 'Settings File', 'Time Scale',
+                      'Label', 'File Type', 'HDF Key', 'HDF Channel']
     settings_temp = settings_temp.ix[:,0]
     for key, val in settings_temp.iteritems():
         
@@ -406,6 +471,53 @@ def load_settings_interact(Settings):
     Settings['Settings File'] = raw_input('Full File path and file for the settings file: ')
     Settings = load_settings(Settings)
     return Settings
+    
+def check_and_load_settings_interact(Settings):
+    """
+    Another interactive load_settings function, except that this version checks to make sure all 
+    necessary settings have been initialized and promts the user to enter each setting that is missing.
+    
+    Parameters
+    ----------
+    Settings: dictionary
+        Current initialized settings. 
+    
+    Returns
+    -------
+    Settings: dictionary
+        Updated Settings dictionary. 
+    Notes
+    -----
+    This function is called in the analize() function and eliminates the option of running analysis before all necessary settings have been initialized.
+    Examples
+    --------
+    Settings = check_and_load_settings_interact(Settings)
+    """
+    
+    required_settings = ['Absolute Value', 'Bandpass Highcut', 'Bandpass Lowcut',
+    					'Bandpass Polynomial', 'Linear Fit', 'Linear Fit-Rolling R',
+    					'Linear Fit-Rolling Window', 'Relative Baseline',
+    					'Savitzky-Golay Polynomial', 'Savitzky-Golay Window Size',
+    					'Baseline Type', 'Baseline Start', 'Baseline Stop',
+    					'Rolling Baseline Window', 'Delta', 'Peak Minimum', 'Peak Maximum',
+    					'Apnea Factor', 'Burst Area', 'Exclude Edges',
+    					'Inter-event interval minimum (time-scale units)',
+    					'Maximum Burst Duration (time-scale units)',
+    					'Minimum Burst Duration (time-scale units)',
+    					'Minimum Peak Number', 'Threshold', 'Generate Graphs',
+    					'Graph LCpro events']
+				
+    for item in required_settings:
+    	if item in Settings.keys():
+    		continue
+    	elif item == 'Absolute Value':
+    		Settings[item] = input(item + ' (True or False; Must be True if Savitzky-Golay is being used): ')
+    	elif item == 'Bandpass Highcut':
+			Settings[item] = input(item + ' (Hz): ')
+        else:
+        	Settings[item] = input(item + ': ')
+	
+    return Settings
 
 def display_settings(Settings):
     '''
@@ -430,7 +542,6 @@ def display_settings(Settings):
     Settings_display
     '''
     Settings_copy = Settings.copy()
-    
     if 'Baseline-Rolling' in Settings_copy.keys():
         Settings_copy['Baseline-Rolling'] = True
     Settings_copy = DataFrame.from_dict(Settings_copy, orient='index')
@@ -976,6 +1087,7 @@ def linear_subtraction(data, time_array, R_raw, R_roll, window, b=0):
     A = np.vstack([time_r, np.ones(len(time_roll))]).T #matrix required for solving the lstsq, which we want for the fit
     m_r, c_r = np.linalg.lstsq(A, rolling_mean)[0] # find coef. for the y = m*x + c equation
     
+    
     r_r, p_r = pearsonr(data_roll, ((m_r*time_roll) +c_r+1))
     
     if r>=r_r and r >=R_raw: #raw fit is better than rolling and above thresh
@@ -1036,7 +1148,7 @@ def transformation(Data, Settings):
         data_trans = abs(data_trans)
     
     if Settings['Savitzky-Golay Window Size'] != 'none':
-        data_trans =savitzky_golay(data_trans, Settings['Savitzky-Golay Window Size'], 
+        data_trans = savitzky_golay(data_trans, Settings['Savitzky-Golay Window Size'], 
                                    Settings['Savitzky-Golay Polynomial'])
     
     return data_trans
@@ -1242,11 +1354,11 @@ def baseline_rolling(time, data_trans, window):
         window size for the moving average.
     '''
     
-    rolling_mean = pd.rolling_mean(data_trans, window)
-    
+    rolling_mean = pd.Series(data_trans).rolling(window).mean()
+
     time = time[(window/2):-(window/2)]
     data_trans = data_trans[(window/2):-(window/2)]
-    rolling_mean = rolling_mean[window:]
+    rolling_mean = rolling_mean.values[window:]
     
     #sanity check
     if len(data_trans) != len(rolling_mean):
@@ -1604,7 +1716,7 @@ def event_peakdet_wrapper(Data, Settings, Results):
         
         valleys_dict[label] = results_valleys
         
-        #peaks_sum[label] = peak_sum
+    #peaks_sum[label] = peak_sum
     Results['Peaks'] = peaks_dict
     Results['Valleys'] = valleys_dict
     #Results['Peaks Summary'] = peaks_sum
@@ -1658,26 +1770,26 @@ def event_burstdet_settings(Data, Settings, Results):
         Settings['Threshold'] = threshperc
     
     #inter-event min
-    if 'Inter-event interval minimum (seconds)' in Settings.keys():
-        print "Previous interval value: %s" %Settings['Inter-event interval minimum (seconds)']
+    if 'Inter-event interval minimum (time-scale units)' in Settings.keys():
+        print "Previous interval value: %s" %Settings['Inter-event interval minimum (time-scale units)']
         
     cluster_time = raw_input("Enter the minimum inter-event interval in seconds:")
     cluster_time = float(cluster_time)
-    Settings['Inter-event interval minimum (seconds)'] = cluster_time
+    Settings['Inter-event interval minimum (time-scale units)'] = cluster_time
     
     #burst duration min
-    if 'Minimum Burst Duration (s)' in Settings.keys():
-        print "Previous Minimum Burst Duration value: %s" %Settings['Minimum Burst Duration (s)']
+    if 'Minimum Burst Duration (time-scale units)' in Settings.keys():
+        print "Previous Minimum Burst Duration value: %s" %Settings['Minimum Burst Duration (time-scale units)']
     minimum_duration = raw_input("Enter the minimum burst duration in seconds:")
     minimum_duration = float(minimum_duration)
-    Settings['Minimum Burst Duration (s)'] = minimum_duration
+    Settings['Minimum Burst Duration (time-scale units)'] = minimum_duration
     
     #burst duration max
-    if 'Maximum Burst Duration (s)' in Settings.keys():
-        print "Previous Maximum Burst Duration value: %s" %Settings['Maximum Burst Duration (s)']
+    if 'Maximum Burst Duration (time-scale units)' in Settings.keys():
+        print "Previous Maximum Burst Duration value: %s" %Settings['Maximum Burst Duration (time-scale units)']
     max_duration = raw_input("Enter the maximum burst duration in seconds:")
     max_duration = float(max_duration)
-    Settings['Maximum Burst Duration (s)'] = max_duration
+    Settings['Maximum Burst Duration (time-scale units)'] = max_duration
 
     #Minimum Peak Num
     if 'Minimum Peak Number' in Settings.keys():
@@ -1744,13 +1856,13 @@ def event_burstdet(Data, Time, Settings, Results, roi):
         bstart, bend, bdur = burstduration_lin(Time, np.array(Data), 
                                                Settings['Threshold'], 
                                                1, 
-                                               Settings['Inter-event interval minimum (seconds)'])
+                                               Settings['Inter-event interval minimum (time-scale units)'])
     
     elif Settings['Baseline Type'] == 'linear': #data[shift]
         bstart, bend, bdur = burstduration_lin(Time, np.array(Data), 
                                                Results['Baseline'][roi], 
                                                Settings['Threshold'], 
-                                               Settings['Inter-event interval minimum (seconds)'])
+                                               Settings['Inter-event interval minimum (time-scale units)'])
         
         
     elif Settings['Baseline Type'] == 'rolling': #data[rolling]
@@ -1758,7 +1870,7 @@ def event_burstdet(Data, Time, Settings, Results, roi):
                                                                            np.array(Data), 
                                                                            Results['Baseline-Rolling'][roi], 
                                                                            Settings['Threshold'], 
-                                                                           Settings['Inter-event interval minimum (seconds)'])
+                                                                           Settings['Inter-event interval minimum (time-scale units)'])
     failure = False
     if len(bstart) ==0:
         print roi+'has no bursts.'
@@ -1783,8 +1895,8 @@ def event_burstdet(Data, Time, Settings, Results, roi):
         results_bursts['Burst End Amplitude'] = b_end_amp
     
     #Filter results
-    results_bursts = results_bursts[results_bursts['Burst Duration']>Settings['Minimum Burst Duration (s)']]
-    results_bursts = results_bursts[results_bursts['Burst Duration']<=Settings['Maximum Burst Duration (s)']]
+    results_bursts = results_bursts[results_bursts['Burst Duration']>Settings['Minimum Burst Duration (time-scale units)']]
+    results_bursts = results_bursts[results_bursts['Burst Duration']<=Settings['Maximum Burst Duration (time-scale units)']]
 
     #If there are no bursts, return the empty df and failure flag
     if results_bursts.empty == True:
@@ -2155,6 +2267,7 @@ def Save_Results(Data, Settings, Results):
 #several of the other functions have specific, paired functions, thus their code is not listed here
 #
 
+#@iterate_data_decorator
 def plot_rawdata(Data):
     figure = plt.plot(Data['original'].index, Data['original'].ix[:,0], 'k')
     plt.title(r'Raw Data %s' %Data['original'].ix[:,0].name)
@@ -3652,9 +3765,9 @@ def moving_statistics(event_type, meas, window, Data, Settings, Results):
         print meas, 'Std'
         print Results['Moving Stats'][r'%s-Std'%meas]
         return Results
-
+        
 #
-#Pipelines
+#Analysis Pipeline
 #
 #
 def analyze(Data, Settings, Results):
@@ -3697,10 +3810,15 @@ def analyze(Data, Settings, Results):
     It has a few handy printed outputs, such as how long an analysis took, which step was just completed, lists of which objects contained no peaks or bursts. it also prints a list of key names and analysis measurements, which can be used in further analysis steps.
     
     """
+    
+	#Make sure all necessary settings have been initialize
+    Settings = check_and_load_settings_interact(Settings)
+    print "All primary-analysis settings have been initialized"
+	
     start = t.clock()
-    #Load
-    Data, Settings = load_wrapper(Data, Settings)
-        
+    #Load    
+    Data['original'].columns = [Settings['Label']]
+    
     #transform data
     Data, Settings = transform_wrapper(Data, Settings)
     print 'Transformation completed'
@@ -3746,7 +3864,7 @@ def analyze(Data, Settings, Results):
     now = datetime.datetime.now()
     colname = 'Settings: ' + str(now)
     Settings_panda.columns = [colname]
-    Settings_panda = Settings_panda.sort()
+    Settings_panda = Settings_panda.sort_index()
     Settings_panda.to_csv(r"%s/%s_Settings_%s.csv"%(Settings['Output Folder'], 
                                                  Settings['Label'], 
                                                  now.strftime('%Y_%m_%d__%H_%M_%S')))
@@ -3775,8 +3893,35 @@ def analyze(Data, Settings, Results):
     print "\n---------------------------"
     print '|Event Detection Complete!|'
     print "---------------------------"
+    
+    #Following analysis, check settings by printing graph
+    graph_ts(Data, Settings, Results, Settings['Label'])
+    
+    #Give user an opportunity to change settings and re-run
+    redo = raw_input("Do you wish to re-run peak and burst detection? (y/n) ")
+    redo = redo.lower()
+    
+    if redo == 'y':
+		print "\nPeak Detection Settings: \n-----------------------"
+		print "Settings['Delta'] = ", Settings['Delta']
+		print "Settings['Peak Minimum'] = ", Settings['Peak Minimum']
+		print "Settings['Peak Maximum'] = ", Settings['Peak Maximum']
+		print "\nBurst Detection Settings: \n--------------------------"
+		print "Settings['Apnea Factor'] = ", Settings['Apnea Factor']
+		print "Settings['Burst Area'] = ", Settings['Burst Area']
+		print "Settings['Exclude Edges'] = ", Settings['Exclude Edges']
+		print "Settings['Inter-event interval minimum (time-scale units)'] = ", Settings['Inter-event interval minimum (time-scale units)']
+		print "Settings['Maximum Burst Duration (time-scale units)'] = ", Settings['Maximum Burst Duration (time-scale units)']
+		print "Settings['Minimum Burst Duration (time-scale units)'] = ", Settings['Minimum Burst Duration (time-scale units)']
+		print "Settings['Minimum Peak Number'] = ", Settings['Minimum Peak Number']
+		print "Settings['Threshold'] = ", Settings['Threshold']
+		print "\nNew Settings: \n--------------"
+		
+		Settings['Delta'] = input("Settings['Delta'] = ")
+		Settings['Peak Minimum'] = input("Settings['Peak Minimum'] = ")
+		Settings['Peak Maximum'] = input("Settings['Peak Maximum'] = ")
+		Settings['Threshold'] = input("Settings['Threshold'] = ")
+		
+		Data, Settings, Results = analyze(Data, Settings, Results)
+    
     return Data, Settings, Results
-
-
-#END OF CODE
-print "BASS ready!"
