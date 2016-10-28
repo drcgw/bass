@@ -5,7 +5,7 @@ This is the Biomedical Analysis Software Suite (BASS) Python Module and accompan
 
 Basic Features
 -----------------
-Signal Processing: Detrending (linear subtraction), Bandpass filters, Savitzky-Golay Filter
+Signal Processing: De-trending (linear subtraction), Bandpass filters, Savitzky-Golay Filter
 
 Event Detection: Peaks and boundaries (Bursts)
 
@@ -17,15 +17,15 @@ Event Analysis: Descriptive Statistics, Histogram Entropy, Approximate Entropy, 
 
 How to use
 --------------
-1. Install Python on yoru computer. I recommend the Enthought Canopy distribution. 
+1. Install Python on your computer. We recommend the Enthought Canopy distribution but Anaconda should work fine also. 
 
-2. Open a terminal window (Mac) or command prompt (cmd, Windows).
+2. Open a terminal window (Mac, Linux) or command prompt (cmd, Windows).
 
 3. Type `ipython notebook` then press `Enter`.
 
 4. The notebook should launch automatically in a web browser window. Make sure that the window is not internet explorer (chrome is ideal, firefox is fine). If the page doesn’t load, look for the line in the terminal window that reads: `The IPython Notebook is running at: http://###.#.#.#:8888/‘`. You can copy and paste the address into the address bar of your web browser.
 
-4. Do not launch from Canopy!
+4. Do not launch from Canopy or other gui-based python environments!
 
 5. Navigate through your folder tree to where you have saved the `Single Wave-Interactive.ipynb` file. Click on it to open it. The `bass.py` and `pyeeg.py` files MUST be in the same folder as the Ipython Notebooks.
 
